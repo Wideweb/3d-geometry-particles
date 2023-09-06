@@ -1,3 +1,5 @@
+<img src="https://github.com/Wideweb/3d-geometry-particles/assets/3997537/3cd7cb96-7256-48b5-bf7a-c104f94782b8" width="400" />
+
 ## Building
 
 The following set of tools is required:
