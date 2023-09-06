@@ -1,5 +1,3 @@
-#pragma once
-
 #include "GeometryParticle.hpp"
 
 #include <cmath>
