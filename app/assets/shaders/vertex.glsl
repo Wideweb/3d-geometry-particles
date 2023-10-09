@@ -24,6 +24,7 @@ out vec3 v_color;
 out vec2 v_texCoord;
 out vec3 v_fragPos;
 out vec3 v_fragCameraPos;
+out vec3 v_normal;
 
 /////////////////////////////////////////////////////////////
 ////////////////////////// MAIN /////////////////////////////
@@ -36,6 +37,7 @@ void main() {
     v_texCoord = a_vertexTextureCoord;
     v_fragPos = vec3(worldPosition);
     v_fragCameraPos = vec3(cameraPosition);
+    v_normal = a_vertexNormal;
 
     gl_Position = u_projection * cameraPosition;
 }

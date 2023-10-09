@@ -5,34 +5,23 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-GeometryParticle::GeometryParticle(Engine::Mesh& geometry) : m_Geometry(geometry) {}
+#include <iostream>
+#include <limits>
+
+GeometryParticle::GeometryParticle(Geometry& geometry) : m_Geometry(geometry) {}
 
 void GeometryParticle::setUp() {
-    int index0;
-    int index1;
-    int index2;
-    
-    if (m_Geometry.indices.size() > 0) {
-      m_TriangleIndex = Engine::Math::rand(m_Geometry.indices.size() / 3 - 1);
-      
-      int i0 = m_TriangleIndex * 3;
-      int i1 = i0 + 1;
-      int i2 = i0 + 2;
+    Engine::Mesh& mesh = m_Geometry.mesh;
 
-      index0 = m_Geometry.indices.at(i0);
-      index1 = m_Geometry.indices.at(i1);
-      index2 = m_Geometry.indices.at(i2);
-    } else {
-      m_TriangleIndex = Engine::Math::rand(m_Geometry.vertices.size() / 3 - 1);
+    m_TriangleIndex = Engine::Math::rand(mesh.vertices.size() / 3 - 1);
 
-      index0 = m_TriangleIndex * 3;
-      index1 = index0 + 1;
-      index2 = index0 + 2;
-    }
+    int index0 = m_TriangleIndex * 3;
+    int index1 = index0 + 1;
+    int index2 = index0 + 2;
 
-    Engine::Vertex& vertex0 = m_Geometry.vertices.at(index0);
-    Engine::Vertex& vertex1 = m_Geometry.vertices.at(index1);
-    Engine::Vertex& vertex2 = m_Geometry.vertices.at(index2);
+    Engine::Vertex& vertex0 = mesh.vertices.at(index0);
+    Engine::Vertex& vertex1 = mesh.vertices.at(index1);
+    Engine::Vertex& vertex2 = mesh.vertices.at(index2);
 
     glm::vec3 P0 = vertex0.position;
     glm::vec3 P1 = vertex1.position;
@@ -40,177 +29,351 @@ void GeometryParticle::setUp() {
 
     glm::vec3 N = getTriangleNormal(P0, P1, P2);
 
-    float w0 = Engine::Math::randFloat();
-    float w1 = Engine::Math::randFloat() * (1.0f - w0);
-    float w2 = 1.0f - w0 - w1;
+    // float a = glm::dot(N, prep_N);
+
+    float w0 = Engine::Math::randFloat() + 0.3f;
+    float w1 = Engine::Math::randFloat() + 0.3f;
+    float w2 = Engine::Math::randFloat() + 0.3f;
+
+    float s = w0 + w1 + w2;
+
+    w0 /= s;
+    w1 /= s;
+    w2 /= s;
 
     glm::vec3 P = P0 * w0 + P1 * w1 + P2 * w2;
 
-    glm::vec3 V = glm::normalize(P0 - P); 
-    glm::vec3 Q = glm::cross(V, N);
+    glm::vec3 V = glm::normalize(P1 - P); 
+    glm::vec3 Q = glm::normalize(glm::cross(V, N));
 
-    float angle = Engine::Math::randFloat() * 2.0f - 1.0f;
-    m_Velocity = V * std::cos(angle) + Q * std::sin(angle);
+    float angle = Engine::Math::randFloat() * 3.14f;
+    m_Q = V * std::cos(angle) + Q * std::sin(angle);
+
+    // float angle = Engine::Math::randFloat() * 6.28f;
     m_Position = P;
+    // m_Velocity = glm::normalize(P1 + glm::vec3(0.0f, 0.0f, 0.0f) - m_Position); //V * std::cos(angle) + Q * std::sin(angle);
     m_P0 = P0;
     m_P1 = P1;
     m_P2 = P2;
+
+    // float angleX = Engine::Math::randFloat() * 1.57f;
+    // float angleY = Engine::Math::randFloat() * 0.57f + 0.78f;
+    // float angleZ = Engine::Math::randFloat() * 0.57f + 0.78f;
+
+    // glm::mat4 radnomRotate = glm::mat4(1.0f);
+    // radnomRotate = glm::rotate(radnomRotate, angleX, glm::vec3(1.0f, 0.0f, 0.0f));
+    // radnomRotate = glm::rotate(radnomRotate, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
+    // radnomRotate = glm::rotate(radnomRotate, angleZ, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // glm::vec4 rotatedNormal = glm::normalize(radnomRotate * glm::vec4(N, 1.0f));
+    // m_Q = glm::vec3(rotatedNormal.x, rotatedNormal.y, rotatedNormal.z);
+    //m_Q = glm::cross(m_Velocity, N);
+    // m_Q = glm::vec3(1.0f, 0.0f, 0.0f);
+    // m_Q = prep_N;
+
+    std::optional<glm::vec3> ip01 = getInterceptPoint(m_Q, m_Position, m_P0, m_P1);
+    std::optional<glm::vec3> ip12 = getInterceptPoint(m_Q, m_Position, m_P1, m_P2);
+    std::optional<glm::vec3> ip20 = getInterceptPoint(m_Q, m_Position, m_P2, m_P0);
+
+    glm::vec3 edgeInterceptPoint;
+    if (ip01.has_value() && glm::distance(ip01.value(), m_Position) > m_Speed) {
+      edgeInterceptPoint = ip01.value();
+    } else if (ip12.has_value() && glm::distance(ip12.value(), m_Position) > m_Speed) {
+      edgeInterceptPoint = ip12.value();
+    } else if (ip20.has_value() && glm::distance(ip20.value(), m_Position) > m_Speed) {
+      edgeInterceptPoint = ip20.value();
+    }
+
+    m_Velocity = glm::normalize(m_Position - edgeInterceptPoint);
+    // float t = Engine::Math::randFloat();
+    // m_Speed = 0.005 + (0.02 - 0.005) * t;
 }
 
 void GeometryParticle::update() {
-  if (!isInsideTriangle(m_P0, m_P1, m_P2, m_Position + m_Velocity * m_Speed)) {
+  if (!isInsideTriangle(m_P0, m_P1, m_P2, m_Position)) {
     moveToNextTriangle();
   }
+  
   m_Position += m_Velocity * m_Speed;
+
+  // glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), 0.001f, glm::vec3(1.0f, 0.0f, 0.0f));
+  // m_Q = glm::normalize(rotate * glm::vec4(m_Q, 1.0f));
 }
 
 bool GeometryParticle::isInsideTriangle(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P) {
-    glm::mat3 m = glm::mat3(P0, P1, P2);
-    glm::vec3 weights = glm::inverse(m) * P;
+  float epsilon = 0.0001f;
 
-    float epsilon = 0.0001f;
+  glm::vec3 u = P1 - P0;
+  glm::vec3 v = P2 - P0;
+  glm::vec3 w = P - P0;
 
-    if (weights.x < -epsilon || weights.y < -epsilon || weights.z < -epsilon) {
-      return false;
-    }
+  glm::vec3 n = glm::cross(u, v);
+  float area = glm::dot(n, n);
 
-    if (std::abs(weights.x + weights.y + weights.z - 1.0f) > epsilon) {
-      return false;
-    }
+  float w2 = glm::dot(glm::cross(u, w), n) / area;
+  if (w2 < -epsilon) {
+    return false;
+  }
 
-    return true;
+  float w1 = glm::dot(glm::cross(w, v), n) / area;
+  if (w1 < -epsilon) {
+    return false;
+  }
+
+  float w0 = 1.0f - w1 - w2;
+  if (w0 < -epsilon) {
+    return false;
+  }
+
+  return true;
 }
 
 void GeometryParticle::moveToNextTriangle() {
-  int triangle;
-  int index0;
-  int index1;
-  int index2;
-  glm::vec3 displacement;
+  auto result = findNextTriangle();
 
-  if (m_Geometry.indices.size() > 0) {
-    auto result = findNextIndexedTriangle(m_Geometry);
-    triangle = result.first;
+  if (result.index < 0) {
+    m_Velocity *= -1;
+    return;
+  }
 
-    if (triangle < 0) {
-      m_Velocity *= -1.0f;
-      return;
-    }
+  m_P0 = m_Geometry.mesh.vertices[result.index * 3].position;
+  m_P1 = m_Geometry.mesh.vertices[result.index * 3 + 1].position;
+  m_P2 = m_Geometry.mesh.vertices[result.index * 3 + 2].position;
 
-    int i0 = triangle * 3;
-    int i1 = i0 + 1;
-    int i2 = i0 + 2;
+  m_Velocity = glm::normalize(result.to - result.from);
+  m_Position = result.from;
 
-    index0 = m_Geometry.indices.at(i0);
-    index1 = m_Geometry.indices.at(i1);
-    index2 = m_Geometry.indices.at(i2);
+  m_TriangleIndex = result.index;
+}
 
-    displacement = result.second;
+TriangleTransition GeometryParticle::findNextTriangle() {
+  auto result = findNextTriangleByVertices();
+  if (result.index >= 0) {
+    return result;
+  }
 
+  result = findNextTriangleByEdge();
+  if (result.index < 0) {
+    // throw 1;
+    m_Speed = 0.0f;
+    color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+  }
+
+  return result;
+}
+
+TriangleTransition GeometryParticle::findNextTriangleByVertices() {
+  int nextTriangleIndex = -1;
+  glm::vec3 wayPoint;
+  glm::vec3 nextWayPoint;
+
+  float d0 = glm::dot(m_Velocity, glm::normalize(m_P0 - m_Position));
+  float d1 = glm::dot(m_Velocity, glm::normalize(m_P1 - m_Position));
+  float d2 = glm::dot(m_Velocity, glm::normalize(m_P2 - m_Position));
+
+  float dist0 = glm::distance(m_P0, m_Position);
+  float dist1 = glm::distance(m_P1, m_Position);
+  float dist2 = glm::distance(m_P2, m_Position);
+
+  // check move direction to vertex
+  if (dist0 < m_Speed) {
+    wayPoint = m_P0;
+  } else if (dist1 < m_Speed) {
+    wayPoint = m_P1;
+  } else if (dist2 < m_Speed) {
+    wayPoint = m_P2;  
+  } else if (d0 > 0.999f) {
+    wayPoint = m_P0;
+  } else if (d1 > 0.999f) {
+    wayPoint = m_P1;
+  } else if (d2 > 0.999f) {
+    wayPoint = m_P2;
   } else {
-    auto result = findNextTriangle(m_Geometry);
-    triangle = result.first;
-
-    if (triangle < 0) {
-      m_Velocity *= -1;
-      return;
-    }
-
-    index0 = triangle * 3;
-    index1 = index0 + 1;
-    index2 = index0 + 2;
-
-    displacement = result.second;
+    return { -1 };
   }
 
-  glm::vec3 N0 = getTriangleNormal(m_P0, m_P1, m_P2);
+  bool movedByEdge = false;
+  glm::vec3 prevWayPoint;
+  if (d0 < -0.999f && !Engine::Math::isEqual(m_P0, wayPoint)) {
+    prevWayPoint = m_P0;
+    movedByEdge = true;
+  } else if (d1 < -0.999f && !Engine::Math::isEqual(m_P1, wayPoint)) {
+    prevWayPoint = m_P1;
+    movedByEdge = true;
+  } else if (d2 < -0.999f && !Engine::Math::isEqual(m_P2, wayPoint)) {
+    prevWayPoint = m_P2;
+    movedByEdge = true;
+  }
 
-  m_P0 = m_Geometry.vertices[index0].position;
-  m_P1 = m_Geometry.vertices[index1].position;
-  m_P2 = m_Geometry.vertices[index2].position;
+  if (movedByEdge) {
+      int adjacentTriangle = m_Geometry.getAdjacentTriangleByEdge(m_TriangleIndex, prevWayPoint, wayPoint);
 
-  glm::vec3 N1 = getTriangleNormal(m_P0, m_P1, m_P2);
+      glm::vec3 P0 = m_Geometry.mesh.vertices[adjacentTriangle * 3].position;
+      glm::vec3 P1 = m_Geometry.mesh.vertices[adjacentTriangle * 3 + 1].position;
+      glm::vec3 P2 = m_Geometry.mesh.vertices[adjacentTriangle * 3 + 2].position;
+      
+      glm::vec3 N0 = getTriangleNormal(m_P0, m_P1, m_P2);
+      glm::vec3 N1 = getTriangleNormal(P0, P1, P2);
 
-  m_Velocity = glm::normalize(rotate(N0, N1, m_Velocity));
-  m_Position += displacement;
-  m_TriangleIndex = triangle;
-}
+      glm::vec3 N = glm::normalize(N0 + N1);
+      m_Q = glm::cross(N, m_Velocity);
+  }
 
-std::pair<int, glm::vec3> GeometryParticle::findNextIndexedTriangle(Engine::Mesh& mesh) {
-  glm::vec3 minDisplacement;
-  float minDisplacementLength = std::numeric_limits<float>::max();
-  int nextTriangleIndex = -1;
-
-  size_t triangles = mesh.indices.size() / 3;
-  for (size_t i = 0; i < triangles; i++) {
+  std::vector<int> triangles = m_Geometry.getTriangles(wayPoint);
+  for (int i: triangles) {
     if (i == m_TriangleIndex) {
       continue;
     }
 
-    int i0 = mesh.indices[i * 3];
-    int i1 = mesh.indices[i * 3 + 1];
-    int i2 = mesh.indices[i * 3 + 2];
+    glm::vec3 P0 = m_Geometry.mesh.vertices[i * 3].position;
+    glm::vec3 P1 = m_Geometry.mesh.vertices[i * 3 + 1].position;
+    glm::vec3 P2 = m_Geometry.mesh.vertices[i * 3 + 2].position;
 
-    glm::vec3 P0 = mesh.vertices[i0].position;
-    glm::vec3 P1 = mesh.vertices[i1].position;
-    glm::vec3 P2 = mesh.vertices[i2].position;
+    glm::vec3 opposite0;
+    glm::vec3 opposite1;
 
-    auto edge = getCommonEdge(P0, P1, P2);
-    if (!edge.has_value()) {
+    // is triangle adjacent by vertex
+    if (P0 == wayPoint) {
+      opposite0 = P1;
+      opposite1 = P2;
+    } else if (P1 == wayPoint) {
+      opposite0 = P2;
+      opposite1 = P0;
+    } else if (P2 == wayPoint) {
+      opposite0 = P0;
+      opposite1 = P1;
+    } else {
       continue;
     }
 
-    glm::vec3 displacement = getDisplacementToLine(edge.value().first, edge.value().second, m_Position);
+    // if (movedByEdge && Engine::Math::isEqual(prevWayPoint, opposite0)) {
+    //   nextTriangleIndex = i;
+    //   nextWayPoint = opposite0;
+    // }
 
-    float displacementLength = glm::length(displacement);
-    if (minDisplacementLength > displacementLength) {
-      minDisplacement = displacement;
-      minDisplacementLength = displacementLength;
-      nextTriangleIndex = i;
+    // if (movedByEdge && Engine::Math::isEqual(prevWayPoint, opposite1)) {
+    //   nextTriangleIndex = i;
+    //   nextWayPoint = opposite1;
+    //   continue;
+    // }
+
+    // glm::vec3 N = getTriangleNormal(m_P0, m_P1, m_P2);
+    // glm::vec3 Q = glm::cross(m_Velocity, N);
+
+    // is found triangle's edge lies on move plane
+    float distance0 = std::abs(glm::dot(m_Q, opposite0 - wayPoint));
+    if (distance0 < 0.001) {
+      return { i, wayPoint, opposite0 };
+    }
+
+    float distance1 = std::abs(glm::dot(m_Q, opposite1 - wayPoint));
+    if (distance1 < 0.001) {
+      return { i, wayPoint, opposite1 };
+    }
+
+    // find intersection of oposide triangle's edge and move plane
+    bool sign0 = std::signbit(glm::dot((opposite0 - wayPoint), m_Q));
+    bool sign1 = std::signbit(glm::dot((opposite1 - wayPoint), m_Q));
+    if (sign0 != sign1) {
+      std::optional<glm::vec3> ip = getInterceptPoint(m_Q, wayPoint, opposite0, opposite1);
+      if (ip.has_value()) {
+        return { i, wayPoint, ip.value() };
+      }
     }
   }
 
-  return std::make_pair(nextTriangleIndex, minDisplacement);
+  return { nextTriangleIndex, wayPoint, nextWayPoint };
 }
 
-std::pair<int, glm::vec3> GeometryParticle::findNextTriangle(Engine::Mesh& mesh) {
-  glm::vec3 minDisplacement;
-  float minDisplacementLength = std::numeric_limits<float>::max();
-  int nextTriangleIndex = -1;
+TriangleTransition GeometryParticle::findNextTriangleByEdge() {
+  std::optional<glm::vec3> ip01 = getInterceptPoint(m_Q, m_Position, m_P0, m_P1);
+  std::optional<glm::vec3> ip12 = getInterceptPoint(m_Q, m_Position, m_P1, m_P2);
+  std::optional<glm::vec3> ip20 = getInterceptPoint(m_Q, m_Position, m_P2, m_P0);
 
-  size_t triangles = mesh.vertices.size() / 3;
-  for (size_t i = 0; i < triangles; i++) {
-    if (i == m_TriangleIndex) {
-      continue;
+  glm::vec3 edgeStartPoint;
+  glm::vec3 edgeEndPoint;
+  glm::vec3 edgeInterceptPoint;
+
+  float dist = std::numeric_limits<float>::max();
+
+  if (ip01.has_value()) {
+    float d01 = glm::distance(ip01.value(), m_Position);
+    if (d01 < dist) {
+      edgeStartPoint = m_P0;
+      edgeEndPoint = m_P1;
+      edgeInterceptPoint = ip01.value();
+      dist = d01;
     }
-
-    glm::vec3 P0 = mesh.vertices[i * 3].position;
-    glm::vec3 P1 = mesh.vertices[i * 3 + 1].position;
-    glm::vec3 P2 = mesh.vertices[i * 3 + 2].position;
-
-    auto edge = getCommonEdge(P0, P1, P2);
-    if (!edge.has_value()) {
-      continue;
+  }
+  
+  if (ip12.has_value()) {
+    float d12 = glm::distance(ip12.value(), m_Position);
+    if (d12 < dist) {
+      edgeStartPoint = m_P1;
+      edgeEndPoint = m_P2;
+      edgeInterceptPoint = ip12.value();
+      dist = d12;
     }
-
-    glm::vec3 edgeStart = edge.value().first;
-    glm::vec3 edgeEnd = edge.value().second;
-
-    if (!isInsideEdgeBounds(edgeStart, edgeEnd, m_Position)) {
-      continue;
-    }
-
-    glm::vec3 displacement = getDisplacementToLine(edgeStart, edgeEnd, m_Position);
-
-    float displacementLength = glm::length(displacement);
-    if (minDisplacementLength > displacementLength) {
-      minDisplacement = displacement;
-      minDisplacementLength = displacementLength;
-      nextTriangleIndex = i;
+  }
+  
+  if (ip20.has_value()) {
+    float d20 = glm::distance(ip20.value(), m_Position);
+    if (d20 < dist) {
+      edgeStartPoint = m_P2;
+      edgeEndPoint = m_P0;
+      edgeInterceptPoint = ip20.value();
+      dist = d20;
     }
   }
 
-  return std::make_pair(nextTriangleIndex, minDisplacement);
+  int i = m_Geometry.getAdjacentTriangleByEdge(m_TriangleIndex, edgeStartPoint, edgeEndPoint);
+  
+  if (i < 0) {
+    glm::vec3 N = glm::normalize(glm::cross(m_P1 - m_P0, m_P2 - m_P0));
+    glm::vec3 R = glm::normalize(glm::cross(edgeEndPoint - edgeStartPoint, N));
+    glm::vec3 Q = m_Q - 2.0f * (glm::dot(R, m_Q) * R);
+    m_Q = glm::normalize(Q);
+    i = m_TriangleIndex;
+  }
+
+  glm::vec3 tP0 = m_Geometry.mesh.vertices[i * 3].position;
+  glm::vec3 tP1 = m_Geometry.mesh.vertices[i * 3 + 1].position;
+  glm::vec3 tP2 = m_Geometry.mesh.vertices[i * 3 + 2].position;
+
+  std::optional<glm::vec3> ip = std::nullopt;
+
+  // glm::vec3 N = getTriangleNormal(tP0, tP1, tP2);
+  // m_Q = glm::cross(m_Velocity, N);
+
+  if (!isSameInterval(edgeStartPoint, edgeEndPoint, tP0, tP1)) {
+    ip = getInterceptPoint(m_Q, edgeInterceptPoint, tP0, tP1);
+  }
+
+  if (!ip.has_value() && !isSameInterval(edgeStartPoint, edgeEndPoint, tP1, tP2)) {
+    ip = getInterceptPoint(m_Q, edgeInterceptPoint, tP1, tP2);
+  }
+
+  if (!ip.has_value() && !isSameInterval(edgeStartPoint, edgeEndPoint, tP2, tP0)) {
+    ip = getInterceptPoint(m_Q, edgeInterceptPoint, tP2, tP0);
+  }
+
+  if (ip.has_value()) {
+    return {i, edgeInterceptPoint, ip.value()};
+  }
+
+  return {-1};
+}
+
+bool GeometryParticle::isSameInterval(glm::vec3 A0, glm::vec3 A1, glm::vec3 B0, glm::vec3 B1) {
+  if (!Engine::Math::isEqual(A0, B0) && !Engine::Math::isEqual(A0, B1)) {
+    return false;
+  }
+
+  if (!Engine::Math::isEqual(A1, B0) && !Engine::Math::isEqual(A1, B1)) {
+    return false;
+  }
+
+  return true;
 }
 
 glm::vec3 GeometryParticle::rotate(glm::vec3 N0, glm::vec3 N1, glm::vec3 V) {
@@ -236,47 +399,16 @@ glm::vec3 GeometryParticle::getTriangleNormal(glm::vec3 P0, glm::vec3 P1, glm::v
   return N;
 }
 
-std::optional<std::pair<glm::vec3, glm::vec3>> GeometryParticle::getCommonEdge(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2) {
-  bool isP0Common = Engine::Math::isEqual(P0, m_P0) || Engine::Math::isEqual(P0, m_P1) || Engine::Math::isEqual(P0, m_P2);
-  bool isP1Common = Engine::Math::isEqual(P1, m_P0) || Engine::Math::isEqual(P1, m_P1) || Engine::Math::isEqual(P1, m_P2);
-  bool isP2Common = Engine::Math::isEqual(P2, m_P0) || Engine::Math::isEqual(P2, m_P1) || Engine::Math::isEqual(P2, m_P2);
+std::optional<glm::vec3> GeometryParticle::getInterceptPoint(glm::vec3 planeNormal, glm::vec3 planePoint, glm::vec3 P0, glm::vec3 P1) {
+  float dist = glm::dot(planeNormal, planePoint - P0);
+  float t = dist / glm::dot(P1 - P0, planeNormal);
 
-  if (isP0Common && isP1Common) {
-    return std::make_pair(P0, P1);
+  if (t < -0.001 || t > 1.001) {
+    return std::nullopt;
   }
 
-  if (isP1Common && isP2Common) {
-    return std::make_pair(P1, P2);
-  }
-
-  if (isP2Common && isP0Common) {
-    return std::make_pair(P2, P0);
-  }
-
-  return std::nullopt;
-}
-
-glm::vec3 GeometryParticle::getDisplacementToLine(glm::vec3 P0, glm::vec3 P1, glm::vec3 P) {
-  glm::vec3 lineDir = glm::normalize(P1 - P0);
-  glm::vec3 R = P - P0;
-  glm::vec3 proj = P0 + lineDir * glm::dot(lineDir, R);
-  return proj - P;
-}
-
-bool GeometryParticle::isInsideEdgeBounds(glm::vec3 P0, glm::vec3 P1, glm::vec3 P) {
-  glm::vec3 P0P1 = P1 - P0;
-  glm::vec3 P0P = P - P0;
-  if (glm::dot(P0P1, P0P) < 0) {
-    return false;
-  }
-
-  glm::vec3 P1P0 = P0 - P1;
-  glm::vec3 P1P = P - P1;
-  if (glm::dot(P1P0, P1P) < 0) {
-    return false;
-  }
-
-  return true;
+  glm::vec3 Pt = P0 + (P1 - P0) * t;
+  return std::optional<glm::vec3>(Pt);
 }
 
 glm::mat4 GeometryParticle::getTransform() {

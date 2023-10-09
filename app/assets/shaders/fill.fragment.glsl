@@ -25,7 +25,7 @@ void main() {
     vec3 normal = normalize(cross(dx, dy));
 
     vec3 lightDir = normalize(u_lightPos - v_fragPos);
-    float diffuseFactor = dot(normal, lightDir) * 0.75 + 0.25;
+    float diffuseFactor = dot(normal, lightDir) * 0.5 + 0.5;
 
     o_fragColor = vec4(u_color.rgb * diffuseFactor, 1.0);
 }

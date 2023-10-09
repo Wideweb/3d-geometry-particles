@@ -14,13 +14,20 @@ const float c_Epsilon = 0.00001f;
 
 glm::vec3 getDirection(glm::vec3 rotation);
 
-inline bool isEqual(float x, float y) {
-    const float epsilon = c_Epsilon;
+inline bool isEqual(float x, float y, float epsilon) {
     return std::abs(x - y) <= epsilon * std::abs(x);
 }
 
+inline bool isEqual(float x, float y) {
+    return isEqual(x, y, c_Epsilon);
+}
+
+inline bool isEqual(glm::vec3 v0, glm::vec3 v1, float epsilon) {
+    return isEqual(v0.x, v1.x, epsilon) && isEqual(v0.y, v1.y, epsilon) && isEqual(v0.z, v1.z, epsilon);
+}
+
 inline bool isEqual(glm::vec3 v0, glm::vec3 v1) {
-    return isEqual(v0.x, v1.x) && isEqual(v0.y, v1.y) && isEqual(v0.z, v1.z);
+    return isEqual(v0, v1, c_Epsilon);
 }
 
 inline void srand() { std::srand(static_cast<unsigned>(std::time(0))); }

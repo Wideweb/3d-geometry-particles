@@ -9,6 +9,7 @@ set(CMAKE_UNITY_BUILD ON)
 set(SOURCE_EXE 
     src/main.cpp
     src/AppLayer.cpp
+    src/Geometry.cpp
     src/GeometryParticle.cpp
 )	
 

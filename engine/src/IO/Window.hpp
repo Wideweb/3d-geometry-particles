@@ -31,6 +31,7 @@ struct WindowProps {
     int width;
     int height;
     bool antialiasing;
+    void* appInstance;
 };
 
 class Window {

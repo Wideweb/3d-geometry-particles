@@ -11,8 +11,8 @@ namespace Engine {
 
 Application *Application::s_Instance = nullptr;
 
-Application::Application() {
-    WindowProps windowProps{.width = 960, .height = 540, .antialiasing = true};
+Application::Application(void* appInstance) {
+    WindowProps windowProps{.width = 960, .height = 540, .antialiasing = true, .appInstance = appInstance};
     m_Window = std::unique_ptr<Window>(Window::create(windowProps));
     m_Window->setMouseEventCallback(std::bind(&Application::onMouseEvent, this, std::placeholders::_1));
     m_Window->setWindowEventCallback(std::bind(&Application::onWindowEvent, this, std::placeholders::_1));

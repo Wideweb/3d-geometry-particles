@@ -104,7 +104,8 @@ std::shared_ptr<Model> ModelFactory::createPlane(float tileSize, int columns, in
             vertices.emplace_back(
                 glm::vec3(x * tileSize - center.x, 0.0f, z * tileSize - center.y), 
                 glm::vec3(0.0f),
-                glm::vec2(x / columns, z / rows),
+                // glm::vec2(x / columns, z / rows),
+                glm::vec2(i, j),
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
                 glm::vec3(0.8f, 0.6f, 0.1f)

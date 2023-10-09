@@ -33,7 +33,7 @@ class Application {
     bool m_Running = true;
 
   public:
-    Application();
+    Application(void* appInstance);
     virtual ~Application();
 
     void onMouseEvent(MouseEvent &e);

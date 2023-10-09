@@ -50,6 +50,8 @@ Texture TextureLoader::loadTexture(const std::string &path) {
     GLint mipmapLevel = 0;
     GLint border = 0;
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
     // clang-format off
     glTexImage2D(GL_TEXTURE_2D,    // Specifies the target texture of the active texture unit
                  mipmapLevel,      // Specifies the level-of-detail number. Level 0 is the base image level
@@ -62,8 +64,13 @@ Texture TextureLoader::loadTexture(const std::string &path) {
                  data);            // Specifies a pointer to the image data in memory
     // clang-format on
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glGenerateMipmap(GL_TEXTURE_2D);
 

@@ -18,8 +18,6 @@ set(SOURCE_LIB
     src/Core/Math.cpp
     src/IO/Window.cpp
     src/IO/Input.cpp
-    src/IO/SDL/SDLWindow.cpp
-    src/IO/SDL/SDLInput.cpp
     src/Engine/Application.cpp
     src/Engine/Layer.cpp
     src/Engine/CameraController.cpp
@@ -40,6 +38,20 @@ set(SOURCE_LIB
     src/Render3D/TextureLoader.cpp
 )
 
+if (UNIX)
+list(APPEND SOURCE_LIB
+  src/IO/SDL/SDLWindow.cpp
+  src/IO/SDL/SDLInput.cpp
+)
+endif (UNIX)
+
+if (WIN32)
+list(APPEND SOURCE_LIB
+    src/IO/Win/WinWindow.cpp
+    src/IO/Win/WinInput.cpp
+)
+endif (WIN32)
+
 add_library(${PROJECT_NAME} SHARED ${SOURCE_LIB})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
@@ -58,6 +70,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sr
                                          ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
                                          ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
+if (UNIX)
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
@@ -80,6 +93,16 @@ conan_cmake_install(PATH_OR_REFERENCE .
 
 find_package(SDL2 REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+endif(UNIX)
+
+if (WIN32)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    d3d11.lib dxgi.lib dxguid.lib uuid.lib
+    kernel32.lib user32.lib
+    comdlg32.lib advapi32.lib shell32.lib
+    ole32.lib oleaut32.lib
+)
+endif()
 
 find_package(glm REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
