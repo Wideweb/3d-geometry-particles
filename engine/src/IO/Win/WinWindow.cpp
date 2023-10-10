@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string_view>
 
+#include <WindowsX.h>
+
 #include "DxUtils.hpp"
 
 namespace Engine {
@@ -17,11 +19,11 @@ static LRESULT CALLBACK windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         window = static_cast<WinWindow*>(lpcs->lpCreateParams);
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
     } else {
-        window = reinterpret_cast<MyClass*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        window = reinterpret_cast<WinWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     }
 
     if (window != nullptr) {
-        return window->msgProc();
+        return window->msgProc(hwnd, uMsg, wParam, lParam);
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -45,7 +47,7 @@ WinWindow::WinWindow(const WindowProps &props) {
 	wc.hCursor       = LoadCursor(0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 	wc.lpszMenuName  = 0;
-	wc.lpszClassName = L"MainWnd";
+	wc.lpszClassName = "MainWnd";
 
     if (!RegisterClass(&wc)) {
         cerr << "RegisterClass Failed." << endl;
@@ -59,8 +61,8 @@ WinWindow::WinWindow(const WindowProps &props) {
 	int height = R.bottom - R.top;
 
     m_Window = CreateWindow(
-        L"MainWnd",          // Window class
-        L"Engine",           // Window text
+        "MainWnd",           // Window class
+        "Engine",            // Window text
         WS_OVERLAPPEDWINDOW, // Window Style
         CW_USEDEFAULT,       // Window initial horizontal position
         CW_USEDEFAULT,       // Window initial vertical position
@@ -68,17 +70,17 @@ WinWindow::WinWindow(const WindowProps &props) {
         height,              // Window height in device units
         0,                   // Parent window handle
         0,                   // Menu handle
-        mhAppInst,           // Application handle
+        m_AppInstance,       // Application handle
         this                 // Data
     ); 
 	
-    if (!mhMainWnd) {
+    if (!m_Window) {
 		cerr << "CreateWindow Failed." << endl;
 		return;
 	}
 
-	ShowWindow(mhMainWnd, SW_SHOW);
-	UpdateWindow(mhMainWnd);
+	ShowWindow(m_Window, SW_SHOW);
+    UpdateWindow(m_Window);
 
     // Enable the D3D12 debug layer.
     #if defined(DEBUG) || defined(_DEBUG)
@@ -111,13 +113,13 @@ WinWindow::WinWindow(const WindowProps &props) {
     ThrowIfFailed(m_D3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
 
     // The descriptor heap for the render-target view.
-    m_RtvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    m_RtvDescriptorSize = m_D3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
     // The descriptor heap for the depth-stencil view.
-	m_DsvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	m_DsvDescriptorSize = m_D3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
     // The descriptor heap for the combination of constant-buffer, shader-resource, and unordered-access views.
-	m_CbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_CbvSrvUavDescriptorSize = m_D3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Check 4X MSAA quality support for our back buffer format.
     // All Direct3D 11 capable devices support 4X MSAA for all render 
@@ -128,7 +130,7 @@ WinWindow::WinWindow(const WindowProps &props) {
 	msQualityLevels.SampleCount = 4;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	msQualityLevels.NumQualityLevels = 0;
-	ThrowIfFailed(md3dDevice->CheckFeatureSupport(
+	ThrowIfFailed(m_D3dDevice->CheckFeatureSupport(
 		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
 		&msQualityLevels,
 		sizeof(msQualityLevels)));
@@ -166,7 +168,7 @@ WinWindow::WinWindow(const WindowProps &props) {
     //////////////////////// SWAP CHAIN ///////////////////////
     
     // Release the previous swapchain we will be recreating.
-    mSwapChain.Reset();
+    m_SwapChain.Reset();
 
     DXGI_SWAP_CHAIN_DESC sd;
     sd.BufferDesc.Width = props.width;
@@ -186,10 +188,10 @@ WinWindow::WinWindow(const WindowProps &props) {
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // When switching from windowed to full-screen mode, the display mode (or monitor resolution) will be changed to match the dimensions of the application window.
 
 	// Note: Swap chain uses queue to perform flush.
-    ThrowIfFailed(mdxgiFactory->CreateSwapChain(
-		mCommandQueue.Get(),
+    ThrowIfFailed(m_DxgiFactory->CreateSwapChain(
+		m_CommandQueue.Get(),
 		&sd, 
-		mSwapChain.GetAddressOf()
+		m_SwapChain.GetAddressOf()
     ));
 
     //////////////////////// DESCRIPTOR HEAPS ///////////////////////
@@ -200,7 +202,7 @@ WinWindow::WinWindow(const WindowProps &props) {
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;                             // For single-adapter operation, set this to zero.
-    ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
+    ThrowIfFailed(m_D3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(m_RtvHeap.GetAddressOf())));
 
     // depth-stencil view heap
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
@@ -208,12 +210,12 @@ WinWindow::WinWindow(const WindowProps &props) {
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;                             // For single-adapter operation, set this to zero.
-    ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
+    ThrowIfFailed(m_D3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(m_DsvHeap.GetAddressOf())));
 
     onResize();
 }
 
-WinWindow::onResize() {
+void WinWindow::onResize() {
     assert(m_D3dDevice);
 	assert(m_SwapChain);
     assert(m_DirectCmdListAlloc);
@@ -225,12 +227,12 @@ WinWindow::onResize() {
 
 	// Release the previous resources we will be recreating.
 	for (int i = 0; i < c_SwapChainBufferCount; i++) {
-		mSwapChainBuffer[i].Reset();
+		m_SwapChainBuffer[i].Reset();
     }
     m_DepthStencilBuffer.Reset();
 
     // Resize the swap chain.
-    ThrowIfFailed(mSwapChain->ResizeBuffers(
+    ThrowIfFailed(m_SwapChain->ResizeBuffers(
 		c_SwapChainBufferCount, 
 		m_Props.width, m_Props.height, 
 		m_BackBufferFormat, 
@@ -239,10 +241,10 @@ WinWindow::onResize() {
 
 	m_CurrBackBuffer = 0;
 
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_RtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (uint32_t i = 0; i < c_SwapChainBufferCount; i++) {
-		ThrowIfFailed(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
-		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
+		ThrowIfFailed(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_SwapChainBuffer[i])));
+		m_D3dDevice->CreateRenderTargetView(m_SwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
 		rtvHeapHandle.Offset(1, m_RtvDescriptorSize);
 	}
 
@@ -262,17 +264,18 @@ WinWindow::onResize() {
 	// we need to create the depth buffer resource with a typeless format.  
 	depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 
-    depthStencilDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-    depthStencilDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+    depthStencilDesc.SampleDesc.Count = m_4xMsaaState ? 4 : 1;
+    depthStencilDesc.SampleDesc.Quality = m_4xMsaaState ? (m_4xMsaaQuality - 1) : 0;
     depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	CD3DX12_HEAP_PROPERTIES heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
     D3D12_CLEAR_VALUE optClear;
     optClear.Format = m_DepthStencilFormat;
     optClear.DepthStencil.Depth = 1.0f;
     optClear.DepthStencil.Stencil = 0;
-    ThrowIfFailed(m_D3dDevice->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+    ThrowIfFailed(m_D3dDevice->CreateCommittedResource(&heapProps,
 		D3D12_HEAP_FLAG_NONE,
         &depthStencilDesc,
 		D3D12_RESOURCE_STATE_COMMON,
@@ -286,36 +289,38 @@ WinWindow::onResize() {
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Format = m_DepthStencilFormat;
 	dsvDesc.Texture2D.MipSlice = 0;
-    m_D3dDevice->CreateDepthStencilView(m_DepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
+        m_D3dDevice->CreateDepthStencilView(m_DepthStencilBuffer.Get(), &dsvDesc,
+                                            m_DsvHeap->GetCPUDescriptorHandleForHeapStart());
 
     // Transition the resource from its initial state to be used as a depth buffer.
-	m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_DepthStencilBuffer.Get(),
-		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_DepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    m_CommandList->ResourceBarrier(1, &barrier);
 	
     // Execute the resize commands.
     ThrowIfFailed(m_CommandList->Close());
     ID3D12CommandList* cmdsLists[] = { m_CommandList.Get() };
-    mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+    m_CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	// Wait until resize is complete.
 	flushCommandQueue();
 }
 
-WinWindow::flushCommandQueue() {
+void WinWindow::flushCommandQueue() {
     // Advance the fence value to mark commands up to this fence point.
     m_CurrentFence++;
 
     // Add an instruction to the command queue to set a new fence point. Because we 
 	// are on the GPU timeline, the new fence point won't be set until the GPU finishes
 	// processing all the commands prior to this Signal().
-    ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), m_CurrentFence));
+    ThrowIfFailed(m_CommandQueue->Signal(m_Fence.Get(), m_CurrentFence));
 
 	// Wait until the GPU has completed commands up to this fence point.
-    if (mFence->GetCompletedValue() < m_CurrentFence) {
-		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+    if (m_Fence->GetCompletedValue() < m_CurrentFence) {
+        HANDLE eventHandle = CreateEvent(nullptr, false, false, "hello");
 
         // Fire event when GPU hits current fence.  
-        ThrowIfFailed(mFence->SetEventOnCompletion(m_CurrentFence, eventHandle));
+        ThrowIfFailed(m_Fence->SetEventOnCompletion(m_CurrentFence, eventHandle));
 
         // Wait until the GPU hits current fence event is fired.
 		WaitForSingleObject(eventHandle, INFINITE);
@@ -370,33 +375,33 @@ LRESULT WinWindow::msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 				// mAppPaused = false;
 				// mMinimized = false;
 				// mMaximized = true;
-				OnResize();
+				onResize();
 			} else if(wParam == SIZE_RESTORED) {
 				// Restoring from minimized state?
-				if (mMinimized) {
-					mAppPaused = false;
-					mMinimized = false;
-					OnResize();
-				}
+				//if (mMinimized) {
+				//	mAppPaused = false;
+				//	mMinimized = false;
+				//	OnResize();
+				//}
 
-				// Restoring from maximized state?
-				else if (mMaximized) {
-					mAppPaused = false;
-					mMaximized = false;
-					OnResize();
-				} else if (mResizing) {
-					// If user is dragging the resize bars, we do not resize 
-					// the buffers here because as the user continuously 
-					// drags the resize bars, a stream of WM_SIZE messages are
-					// sent to the window, and it would be pointless (and slow)
-					// to resize for each WM_SIZE message received from dragging
-					// the resize bars.  So instead, we reset after the user is 
-					// done resizing the window and releases the resize bars, which 
-					// sends a WM_EXITSIZEMOVE message.
-				} else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
-				{
-					OnResize();
-				}
+				//// Restoring from maximized state?
+				//else if (mMaximized) {
+				//	mAppPaused = false;
+				//	mMaximized = false;
+				//	OnResize();
+				//} else if (mResizing) {
+				//	// If user is dragging the resize bars, we do not resize 
+				//	// the buffers here because as the user continuously 
+				//	// drags the resize bars, a stream of WM_SIZE messages are
+				//	// sent to the window, and it would be pointless (and slow)
+				//	// to resize for each WM_SIZE message received from dragging
+				//	// the resize bars.  So instead, we reset after the user is 
+				//	// done resizing the window and releases the resize bars, which 
+				//	// sends a WM_EXITSIZEMOVE message.
+				//} else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				//{
+				//	OnResize();
+				//}
 			}
 		}
 		return 0;
@@ -419,10 +424,12 @@ LRESULT WinWindow::msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
  
 	// WM_DESTROY is sent when the window is being destroyed.
 	case WM_DESTROY:
+	{
         WindowEvent event(EventType::WindowClosed);
         m_windowEventCallback(event);
-		PostQuitMessage(0);
-		return 0;
+        PostQuitMessage(0);
+        return 0;
+	}
 
 	// The WM_MENUCHAR message is sent when a menu is active and the user presses 
 	// a key that does not correspond to any mnemonic or accelerator key. 
@@ -432,26 +439,34 @@ LRESULT WinWindow::msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	// Catch this message so to prevent the window from becoming too small.
 	case WM_GETMINMAXINFO:
-		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
-		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200; 
-		return 0;
+	{
+        ((MINMAXINFO *)lParam)->ptMinTrackSize.x = 200;
+        ((MINMAXINFO *)lParam)->ptMinTrackSize.y = 200;
+        return 0;
+	}
 
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
-	case WM_RBUTTONDOWN:
-        m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height - GET_Y_LPARAM(lParam), EventType::MouseDown);
-        m_mouseEventCallback(m_MouseEvent);
+	case WM_RBUTTONDOWN: 
+	{
+		m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height - GET_Y_LPARAM(lParam), EventType::MouseDown);
+		m_mouseEventCallback(m_MouseEvent);
 		return 0;
+    }
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
-		m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height - GET_Y_LPARAM(lParam), EventType::MouseUp);
+	{
+        m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height - GET_Y_LPARAM(lParam), EventType::MouseUp);
         m_mouseEventCallback(m_MouseEvent);
-		return 0;
+        return 0;
+    }
 	case WM_MOUSEMOVE:
-        m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height -  GET_Y_LPARAM(lParam), EventType::MouseMoved);
+	{
+        m_MouseEvent = MouseEvent(GET_X_LPARAM(lParam), m_Props.height - GET_Y_LPARAM(lParam), EventType::MouseMoved);
         m_mouseEventCallback(m_MouseEvent);
-		return 0;
+        return 0;
+	}
     case WM_KEYUP:
         if (wParam == VK_ESCAPE) {
             PostQuitMessage(0);
@@ -477,7 +492,7 @@ void WinWindow::readInput() {
     }
 }
 
-void WinWindow::swapBuffers() { SDL_GL_SwapWindow(m_Window); }
+void WinWindow::swapBuffers() { }
 
 void *WinWindow::getNaviteWindow() const { return m_Window; }
 
@@ -491,9 +506,9 @@ void WinWindow::getDrawableSize(int &width, int &height) const {
 }
 
 void WinWindow::shutDown() {
-    SDL_GL_DeleteContext(m_Context);
-    SDL_DestroyWindow(m_Window);
-    SDL_Quit();
+    if (m_D3dDevice != nullptr) {
+		flushCommandQueue();
+    }
 }
 
 } // namespace Engine

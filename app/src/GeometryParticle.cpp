@@ -294,7 +294,7 @@ TriangleTransition GeometryParticle::findNextTriangleByEdge() {
   glm::vec3 edgeEndPoint;
   glm::vec3 edgeInterceptPoint;
 
-  float dist = std::numeric_limits<float>::max();
+  float dist = (std::numeric_limits<float>::max)();
 
   if (ip01.has_value()) {
     float d01 = glm::distance(ip01.value(), m_Position);

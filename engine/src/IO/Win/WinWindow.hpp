@@ -1,8 +1,13 @@
 #pragma once
 
+#include "Window.hpp"
+
+#define NOMINMAX
 #include <windows.h>
+
 #include <dxgi1_4.h>
 #include <d3d12.h>
+#include <wrl/client.h>
 
 namespace Engine {
 
@@ -11,8 +16,7 @@ class WinWindow : public Window {
     WindowProps m_Props;
 
     HINSTANCE m_AppInstance;
-    HWND *m_Window;
-    SDL_GLContext m_Context;
+    HWND m_Window;
 
     Microsoft::WRL::ComPtr<IDXGIFactory4> m_DxgiFactory;
     Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
@@ -21,9 +25,9 @@ class WinWindow : public Window {
     Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence;
     uint64_t m_CurrentFence = 0;
 
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_DirectCmdListAlloc;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList;
 
     static const int c_SwapChainBufferCount = 2;
     uint32_t m_CurrBackBuffer = 0;
@@ -47,7 +51,7 @@ class WinWindow : public Window {
     EventCallbackFn<MouseEvent &> m_mouseEventCallback;
     EventCallbackFn<WindowEvent &> m_windowEventCallback;
     EventCallbackFn<void *> m_nativeEventCallback;
-    MouseEvent m_MouseEvent;
+    MouseEvent m_MouseEvent{};
 
   public:
     WinWindow(const WindowProps &props);
@@ -71,6 +75,8 @@ class WinWindow : public Window {
     virtual void *getNaviteWindow() const override;
     virtual void *getContext() const override;
     virtual MouseEvent &getMouseEvent() override;
+
+    LRESULT msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
   private:
     void onResize();
