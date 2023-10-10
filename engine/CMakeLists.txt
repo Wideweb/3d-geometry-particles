@@ -48,19 +48,22 @@ set(INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/Utils
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb
 )
 
 if (UNIX)
   list(APPEND SOURCE_LIB
-    vendor/glad/glad.c
-    vendor/imgui_impl_opengl3.cpp
-    vendor/imgui_impl_sdl.cpp
     src/IO/SDL/SDLWindow.cpp
     src/IO/SDL/SDLInput.cpp
+    vendor/glad/glad.c
+    vendor/imgui-impl/imgui_impl_opengl3.cpp
+    vendor/imgui-impl/imgui_impl_sdl.cpp
   )
 
   list(APPEND INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/IO/SDL
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui-impl
   )
 endif (UNIX)
 
@@ -72,6 +75,7 @@ if (WIN32)
 
   list(APPEND INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/IO/Win
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/dx
   )
 endif (WIN32)
 
@@ -112,6 +116,9 @@ if (UNIX)
   find_package(assimp REQUIRED)
   target_link_libraries(${PROJECT_NAME} PRIVATE assimp::assimp)
 
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
+  target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
+
 endif(UNIX)
 
 if (WIN32)
@@ -133,9 +140,6 @@ if (WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${assimp_LIBRARIES})
 
 endif(WIN32)
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
 
 # target_link_libraries(${PROJECT_NAME} PRIVATE -lprofiler)
 # target_link_libraries(${PROJECT_NAME} PRIVATE -ltcmalloc)
