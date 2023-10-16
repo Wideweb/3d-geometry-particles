@@ -12,15 +12,6 @@ Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indic
 
 Mesh::Mesh(const std::vector<Vertex> &vertices) : vertices(vertices) {}
 
-Mesh::Mesh(const Mesh &mesh) {
-    VAO = mesh.VAO;
-    EBO = mesh.EBO;
-    VBO = mesh.VBO;
-
-    vertices = mesh.vertices;
-    indices = mesh.indices;
-}
-
 void Mesh::setUp() {
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);

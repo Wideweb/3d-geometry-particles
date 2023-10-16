@@ -67,6 +67,8 @@ class WinWindow : public Window {
 
     Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature = nullptr;
 
+    std::unique_ptr<UploadBuffer<ObjectConstants>> m_ObjectCB = nullptr;
+
     std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3DBlob>> m_Shaders;
     std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_PSOs;
 
