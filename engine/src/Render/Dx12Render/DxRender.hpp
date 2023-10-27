@@ -24,7 +24,7 @@
 
 namespace Engine {
 
-class DxRender : public Render {
+class DxRender {
   private:
     HWND m_Window;
 
@@ -98,9 +98,9 @@ class DxRender : public Render {
 
     std::shared_ptr<RenderTexture> createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height);
 
-    std::shared_ptr<RenderPass> DxRender::createRenderPass(std::shared_ptr<ShaderProgram> shaderProgram, size_t constantBuffersNum, size_t texturesNum);
+    std::shared_ptr<RenderPass> createRenderPass(std::shared_ptr<ShaderProgram> shaderProgram, size_t constantBuffersNum, size_t texturesNum);
 
-    std::shared_ptr<RenderPass> DxRender::createRenderPass(std::shared_ptr<ShaderProgram> shaderProgram, size_t constantBuffersNum, size_t texturesNum, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat0);
+    std::shared_ptr<RenderPass> createRenderPass(std::shared_ptr<ShaderProgram> shaderProgram, size_t constantBuffersNum, size_t texturesNum, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat0);
 
     void drawItem(const std::string& geometry, const std::string& subGeometry);
 

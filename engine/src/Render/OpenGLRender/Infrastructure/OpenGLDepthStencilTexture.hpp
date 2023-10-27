@@ -2,19 +2,13 @@
 
 #include "glad/glad.h"
 
-class OpenGLRenderTexture {
+class OpenGLDepthStencilTexture {
 public:
-    OpenGLRenderTexture(
-        GLenum format,
-        GLenum dataType,
-        size_t width,
-        size_t height);
+    OpenGLDepthStencilTexture(size_t width, size_t height);
 
-    virtual ~OpenGLRenderTexture();
+    virtual ~OpenGLDepthStencilTexture();
 
     void resize(size_t width, size_t height);
-
-    void release();
 
     void setClearColor(float r, float g, float b, float a) {
         m_ClearColor[0] = r;
@@ -32,6 +26,8 @@ public:
 
     void bind() const;
     void unbind() const;
+    
+    void release();
 
 private:
     GLuint                                              m_Resource;
