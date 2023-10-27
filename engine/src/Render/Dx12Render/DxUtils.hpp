@@ -40,10 +40,12 @@ public:
         Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
 
 	static Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(
-		const std::wstring& filename,
+		const std::string& filename,
 		const D3D_SHADER_MACRO* defines,
 		const std::string& entrypoint,
 		const std::string& target);
+
+    static size_t bitsPerPixel(DXGI_FORMAT fmt);
 };
 
 inline std::wstring AnsiToWString(const std::string &str) {

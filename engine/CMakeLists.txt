@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_TOOLCHAIN_FILE C:/Alckevich/vcpkg/scripts/buildsystems/vcpkg.cmake)
+set(CMAKE_TOOLCHAIN_FILE D:/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 project(Engine VERSION 1.0)
 

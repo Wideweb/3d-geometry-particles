@@ -18,7 +18,7 @@ struct SubmeshGeometry {
 
 struct MeshGeometry {
 	// Give it a name so we can look it up by name.
-	std::string Name;
+	std::string name;
 
 	// System memory copies.  Use Blobs because the vertex/index format can be generic.
 	// It is up to the client to cast appropriately.  
@@ -42,7 +42,7 @@ struct MeshGeometry {
 	// the Submeshes individually.
 	std::unordered_map<std::string, SubmeshGeometry> drawArgs;
 
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const {
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView() const {
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = vertexBufferGPU->GetGPUVirtualAddress();
 		vbv.StrideInBytes = vertexByteStride;
@@ -51,17 +51,17 @@ struct MeshGeometry {
 		return vbv;
 	}
 
-	D3D12_INDEX_BUFFER_VIEW IndexBufferView() const {
+	D3D12_INDEX_BUFFER_VIEW indexBufferView() const {
 		D3D12_INDEX_BUFFER_VIEW ibv;
 		ibv.BufferLocation = indexBufferGPU->GetGPUVirtualAddress();
-		ibv.Format = IndexFormat;
+		ibv.Format = indexFormat;
 		ibv.SizeInBytes = indexBufferByteSize;
 
 		return ibv;
 	}
 
 	// We can free this memory after we finish upload to the GPU.
-	void DisposeUploaders() {
+	void disposeUploaders() {
 		vertexBufferUploader = nullptr;
 		indexBufferUploader = nullptr;
 	}
