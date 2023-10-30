@@ -1,22 +1,21 @@
 #pragma once
 
 #include "DxUtils.hpp"
-#include "Framebuffer.hpp"
 #include "ShaderProgram.hpp"
 
 #include <memory>
-#include <vector>
+
+namespace Engine {
 
 class OpenGLRenderPass {
 public:
-    OpenGLRenderPass(std::shared_ptr<OpenGLRenderPass> shaderProgram, const std::vector<size_t>& constantBufferDescriotions);
+    OpenGLRenderPass(std::shared_ptr<OpenGLRenderPass> shaderProgram);
 
     void bind() const;
     void unbind() const;
 
-    void release();
-
 private:
-    std::vector<GLuint>                               m_ConstantBuffers;
     std::shared_ptr<OpenGLShaderProgram>              m_ShaderProgram;
 };
+
+} // namespace Engine

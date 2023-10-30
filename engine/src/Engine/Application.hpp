@@ -4,9 +4,11 @@
 #include "CameraController.hpp"
 #include "Input.hpp"
 #include "Layer.hpp"
-#include "MasterRenderer.hpp"
 #include "Time.hpp"
+
+#define RENDER_DX12
 #include "Window.hpp"
+#include "CrossPlatformRender.hpp"
 
 #include <iterator>
 #include <list>
@@ -23,7 +25,7 @@ class Application {
 
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<Input> m_Input;
-    std::unique_ptr<MasterRenderer> m_Render;
+    std::unique_ptr<CrossPlatformRender> m_Render;
     std::unique_ptr<Camera> m_Camera;
     std::unique_ptr<CameraController> m_CameraController;
     std::list<std::shared_ptr<Layer>> m_LayerStack;
@@ -65,7 +67,7 @@ class Application {
 
     Window &getWindow() { return *m_Window; }
     Input &getInput() { return *m_Input; }
-    MasterRenderer &getRender() { return *m_Render; }
+    CrossPlatformRender &getRender() { return *m_Render; }
     Camera &getCamera() { return *m_Camera; }
     CameraController &getCameraController() { return *m_CameraController; }
     Time &getTime() { return m_Time; }

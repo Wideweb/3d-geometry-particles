@@ -1,20 +1,22 @@
-#include "Framebuffer.hpp"
+#include "DxFramebuffer.hpp"
 
-Framebuffer::Framebuffer() noexcept :
+namespace Engine {
+
+DxFramebuffer::DxFramebuffer() noexcept :
     m_RenderTo(false),
     m_Width(0),
     m_Height(0) {
 }
 
-void Framebuffer::addAttachment(std::shared_ptr<RenderTexture> attachment) {
+void DxFramebuffer::addAttachment(std::shared_ptr<DxRenderTexture> attachment) {
     m_Attachments.push_back(attachment);
 }
 
-void Framebuffer::setDSAttachment(std::shared_ptr<DepthStencilTexture> attachment) {
+void DxFramebuffer::setDSAttachment(std::shared_ptr<DxDepthStencilTexture> attachment) {
     m_DSAttachment = attachment;
 }
 
-void Framebuffer::resize(size_t width, size_t height) {
+void DxFramebuffer::resize(size_t width, size_t height) {
     if (m_Width == width && m_Height == height) {
         return;
     }
@@ -29,21 +31,21 @@ void Framebuffer::resize(size_t width, size_t height) {
     m_Height = height;
 }
 
-void Framebuffer::beginRenderTo(ID3D12GraphicsCommandList* commandList) {
+void DxFramebuffer::beginRenderTo(ID3D12GraphicsCommandList* commandList) {
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDescriptors;
     for (auto& rt: m_Attachments) {
         rt->beginRenderTo(commandList);
-        rtvDescriptors.push_back(rt->getRtvDescriptor());
+        rtvDescriptors.push_back(rt->getRtvDescriptor().cpu);
     }
 
     m_DSAttachment->beginRenderTo(commandList);
 
-    commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), true, &m_DSAttachment->getDsvDescriptor());
+    commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), true, &m_DSAttachment->getDsvDescriptor().cpu);
 
     m_RenderTo = true;
 }
 
-void Framebuffer::endRenderTo(ID3D12GraphicsCommandList* commandList) {
+void DxFramebuffer::endRenderTo(ID3D12GraphicsCommandList* commandList) {
     for (auto& rt: m_Attachments) {
         rt->endRenderTo(commandList);
     }
@@ -53,9 +55,11 @@ void Framebuffer::endRenderTo(ID3D12GraphicsCommandList* commandList) {
     m_RenderTo = false;
 }
 
-void Framebuffer::clear(ID3D12GraphicsCommandList* commandList) {
+void DxFramebuffer::clear(ID3D12GraphicsCommandList* commandList) {
     m_DSAttachment->clear(commandList);
     for (auto& rt: m_Attachments) {
         rt->clear(commandList);
     }
 }
+
+} // namespace Engine

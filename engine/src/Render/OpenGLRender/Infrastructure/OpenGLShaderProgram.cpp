@@ -6,9 +6,14 @@
 #include <stdexcept>
 #include <vector>
 
-OpenGLShaderProgram::OpenGLShaderProgram(const std::string& vertexFile, const std::string& pixelFile) noexcept {   
-    // m_VertexShader = OpenGLUtils::compileShader(vertexFile, nullptr, "VS", "vs_5_1");
-    // m_PixelShader = OpenGLUtils::compileShader(pixelFile, nullptr, "PS", "ps_5_1");
+namespace Engine {
+
+OpenGLShaderProgram::OpenGLShaderProgram(
+    const std::string& vertexFile,
+    const std::string& pixelFile,
+    const std::vector<size_t>& dataSlots,
+    const std::vector<std::string>& textureSlots
+) noexcept {  
 
     GLuint vertexShader = OpenGLUtils::compileShader(vertexFile, GL_VERTEX_SHADER);
     if (vertexShader == 0) {
@@ -49,14 +54,49 @@ OpenGLShaderProgram::OpenGLShaderProgram(const std::string& vertexFile, const st
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+
+    m_DataSlots.reserve(dataSlots.size());
+    for (size_t i = 0; i < dataSlots.size(); i++) {
+        m_DataSlots.push_back(std::make_unique<OpenGLShaderProgramSlot>(dataSlots[i]));
+    }
+
+    m_TextureSlots.reserve(textureSlots.size());
+    for (size_t i = 0; i < textureSlots.size(); i++) {
+        GLint location = glGetUniformLocation(m_ProgramId, textureSlots[i].c_str());
+        m_TextureSlots.emplace_back(-1, location);
+    }
 }
 
 OpenGLShaderProgram::~OpenGLShaderProgram() {
     release();
 }
 
+void OpenGLShaderProgram::setDataSlot(size_t index, void* data) {
+    m_DataSlots[index]->copyData(data);
+}
+
+void OpenGLShaderProgram::setTextureSlot(size_t index, GLuint resource) {
+    m_TextureSlots[index].resource = resource;
+}
+
+void OpenGLShaderProgram::setTextureSlot(size_t index, std::shared_ptr<OpenGLRenderTexture> renderTexture) {
+    setTextureSlot(index, renderTexture->getResource());
+}
+
 void OpenGLShaderProgram::bind() const {
     glUseProgram(m_ProgramId);
+
+    for (size_t i = 0; i < m_DataSlots.size(); i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, i, m_DataSlots[i]->getResource()); 
+    }
+
+    for (size_t i = 0; i < m_TextureSlots.size(); i++) {
+        if (m_TextureSlots[i].resource > 0) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, m_TextureSlots[i].resource);
+            glUniform1i(m_TextureSlots[i].location, i);
+        }
+    }
 }
 
 void OpenGLShaderProgram::unbind() const {
@@ -69,3 +109,5 @@ void OpenGLShaderProgram::release() {
         m_ProgramId = 0;
     }
 }
+
+} // namespace Engine

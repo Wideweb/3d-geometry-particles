@@ -1,13 +1,21 @@
-#include "RenderPass.hpp"
+#pragma once
 
-RenderPass::RenderPass(
+#include "DxShaderProgram.hpp"
+
+namespace Engine {
+
+DxShaderProgram::DxShaderProgram(
     ID3D12Device* device,
-    std::shared_ptr<ShaderProgram> shaderProgram,
-    size_t constantBuffersNum,
-    size_t texturesNum,
-    std::vector<DXGI_FORMAT> rtvFormats,
-    DXGI_FORMAT dsvFormat
-) {
+    const std::string& vertexFile,
+    const std::string& pixelFile
+    const std::vector<size_t>& dataSlots,
+    size_t textureSlots,
+) noexcept {   
+    m_Device = device;
+
+    m_VertexShader = DxUtils::CompileShader(vertexFile, nullptr, "VS", "vs_5_1");
+    m_PixelShader = DxUtils::CompileShader(pixelFile, nullptr, "PS", "ps_5_1");
+
     //////////////////// Root Signature ////////////////////
 
     // Shader programs typically require resources as input (constant buffers,
@@ -18,32 +26,32 @@ RenderPass::RenderPass(
 
     // Root signature is defined by an array of root parameters that describe the resources the shaders expect for a draw call
     // Root parameter can be a table, root descriptor or root constants.
-    size_t slotsNum = constantBuffersNum + texturesNum;
     std::vector<CD3DX12_ROOT_PARAMETER> slotRootParameters;
-    slotRootParameters.reserve(slotsNum);
+    slotRootParameters.reserve(dataSlots.size() + textureSlots);
 
-    for (size_t i = 0; i < constantBuffersNum; i++) {
+    for (size_t i = 0; i < dataSlots.size(); i++) {
         slotRootParameters[i].InitAsConstantBufferView(i);
+        m_DataSlots.push_back(std::make_unique<DxShaderProgramSlot>(m_Device, dataSlots[i]));
     }
 
-    if (texturesNum > 0) {
+    if (textureSlots > 0) {
         CD3DX12_DESCRIPTOR_RANGE texTable;
         texTable.Init(
             D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-            texturesNum,  // Number of descriptors in table
+            textureSlots, // Number of descriptors in table
             0,            // base shader register arguments are bound to for this root parameter
             0,            // register space
             D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND   // offset from start of table
         );
 
-        slotRootParameters[constantBuffersNum].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+        slotRootParameters[dataSlots.size()].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
     }
 
     auto staticSamplers = getStaticSamplers();
 
     // A root signature is an array of root parameters.
     CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        slotsNum,
+        slotRootParameters.size(),
         slotRootParameters.data(),
         (UINT)staticSamplers.size(),
         staticSamplers.data(),
@@ -71,52 +79,43 @@ RenderPass::RenderPass(
         serializedRootSig->GetBufferSize(),     // The size, in bytes, of the block of memory that pBlobWithRootSignature points to.
         IID_PPV_ARGS(&m_RootSignature)            // The globally unique identifier (GUID) for the root signature interface. 
     ));
-    
-    //////////////////// Pipeline State Objects ////////////////////
-    CD3DX12_RASTERIZER_DESC rasterDesc(D3D12_DEFAULT);
-    rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
-    rasterDesc.CullMode = D3D12_CULL_MODE_BACK;
-    rasterDesc.FrontCounterClockwise = true;
-    rasterDesc.DepthClipEnable = true;
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-
-    ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-    psoDesc.InputLayout = { shaderProgram->getInputLayout().data(), (UINT)shaderProgram->getInputLayout().size() };
-    psoDesc.pRootSignature = m_RootSignature.Get();
-    psoDesc.VS = { 
-        reinterpret_cast<BYTE*>(shaderProgram->getVertexShader()->GetBufferPointer()),
-        shaderProgram->getVertexShader()->GetBufferSize()
+    m_InputLayout =
+    {
+        { "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,       0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TANGENT",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 56, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
-    psoDesc.PS = { 
-        reinterpret_cast<BYTE*>(shaderProgram->getPixelShader()->GetBufferPointer()),
-        shaderProgram->getPixelShader()->GetBufferSize()
-    };
-    psoDesc.RasterizerState = rasterDesc;
-    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-    psoDesc.SampleMask = UINT_MAX;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-    psoDesc.SampleDesc.Count = 1;
-    psoDesc.SampleDesc.Quality = 0;
-
-    psoDesc.NumRenderTargets = rtvFormats.size();
-    for (size_t i = 0; i < rtvFormats.size(); i++) {
-        psoDesc.RTVFormats[i] = rtvFormats[i];
-    }
-
-    psoDesc.DSVFormat = dsvFormat;
-    
-    ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_Pso.GetAddressOf())));
 }
 
-void RenderPass::bind(ID3D12GraphicsCommandList* commandList) {
+void DxShaderProgram::setDataSlot(size_t index, void* data) {
+    m_DataSlots[index]->copyData(data);
+}
+
+void DxShaderProgram::setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE srvDescriptor) {
+    m_TxtureSlots[index] = srvDescriptor;
+}
+
+void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture) {
+    setTextureSlot(renderTexture->getSrvDescriptor().gpu);
+}
+
+void DxShaderProgram::bind(ID3D12GraphicsCommandList* commandList) {
     commandList->SetGraphicsRootSignature(m_RootSignature.Get());
-    commandList->SetPipelineState(m_Pso.Get());
+
+    for (size_t i = 0; i < m_DataSlots.size(); i++) {
+        commandList->SetGraphicsRootConstantBufferView(i, m_DataSlots[i]->resource()->GetGPUVirtualAddress());
+    }
+    
+    for (size_t i = 0; i < m_TxtureSlots.size(); i++) {
+        commandList->SetGraphicsRootDescriptorTable(i, m_TxtureSlots[i]);
+    }
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> RenderPass::getStaticSamplers() {
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> DxShaderProgram::getStaticSamplers() {
     // Applications usually only need a handful of samplers.  So just define them all up front
     // and keep them available as part of the root signature.  
 
@@ -174,3 +173,5 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> RenderPass::getStaticSamplers()
         anisotropicClamp
     };
 }
+
+} // namespace Engine

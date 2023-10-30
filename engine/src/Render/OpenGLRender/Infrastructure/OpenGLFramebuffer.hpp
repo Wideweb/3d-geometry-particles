@@ -5,6 +5,8 @@
 #include "OpenGLOpenGLRenderTexture.hpp"
 #include "OpenGLDepthStencilTexture.hpp"
 
+namespace Engine {
+
 class OpenGLFramebuffer {
 public:
     OpenGLFramebuffer();
@@ -43,3 +45,5 @@ private:
 
     bool                                                   m_RenderTo;
 };
+
+} // namespace Engine

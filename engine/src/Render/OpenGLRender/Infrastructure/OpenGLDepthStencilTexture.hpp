@@ -2,6 +2,8 @@
 
 #include "glad/glad.h"
 
+namespace Engine {
+
 class OpenGLDepthStencilTexture {
 public:
     OpenGLDepthStencilTexture(size_t width, size_t height);
@@ -39,3 +41,5 @@ private:
     size_t                                              m_Width;
     size_t                                              m_Height;
 };
+
+} // namespace Engine

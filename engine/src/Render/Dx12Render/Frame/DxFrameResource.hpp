@@ -5,19 +5,21 @@
 
 #include "UploadBuffer.hpp"
 
-struct FrameResource {
+namespace Engine {
+
+struct DxFrameResource {
     // We cannot reset the allocator until the GPU is done processing the commands.
     // So each frame needs their own allocator.
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdListAlloc;
 
     uint64_t fence = 0;
 
-    FrameResource(ID3D12Device* device, size_t capacity) {
+    DxFrameResource(ID3D12Device* device, size_t capacity) {
         ThrowIfFailed(device->CreateCommandAllocator(
             D3D12_COMMAND_LIST_TYPE_DIRECT,
             IID_PPV_ARGS(cmdListAlloc.GetAddressOf())
         ));
-
-        mainPassData = std::make_unique<UploadBuffer<MainPassData>>(device, 1);
     }
 }
+
+} // namespace Engine

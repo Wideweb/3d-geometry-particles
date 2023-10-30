@@ -53,11 +53,11 @@ class Window {
     virtual void readInput() = 0;
     virtual void swapBuffers() = 0;
     virtual void shutDown() = 0;
-    virtual void *getNaviteWindow() const = 0;
-    virtual void *getContext() const = 0;
+    virtual void* getNaviteWindow() const = 0;
+    virtual void* getContext() const = 0;
     virtual MouseEvent &getMouseEvent() = 0;
 
-    static Window *create(const WindowProps &props);
+    static Window* create(const WindowProps &props);
 };
 
 } // namespace Engine

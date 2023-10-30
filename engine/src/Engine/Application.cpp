@@ -19,8 +19,7 @@ Application::Application(void* appInstance) {
 
     m_Input = std::unique_ptr<Input>(Input::create());
 
-    m_Render = std::make_unique<MasterRenderer>(960, 540);
-    m_Render->setClearColor({0.25f, 0.6f, 0.6f, 1.0f});
+    m_Render = std::unique_ptr(Render::create(m_Window->getNaviteWindow(), windowProps.width, windowProps.height));
 
     m_Camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0, 0.0f, -1.0f));
     m_Camera->setSize(960, 540);
@@ -52,13 +51,13 @@ void Application::run() {
             }
         }
 
-        m_Render->clear();
-        m_Render->begin();
+        m_Render->beginFrame();
+        m_Render->clear(0.25f, 0.6f, 0.6f, 1.0f);
         for (auto layer : m_LayerStack) {
             
             layer->draw();
         }
-        m_Render->end();
+        m_Render->endFrame();
 
         m_Window->swapBuffers();
     }
@@ -77,7 +76,7 @@ void Application::onMouseEvent(MouseEvent &e) {
 
 void Application::onWindowEvent(WindowEvent &e) {
     if (e.type == EventType::WindowResized) {
-        m_Render->setViewport(m_Window->getWidth(), m_Window->getHeight());
+        m_Render->resize(m_Window->getWidth(), m_Window->getHeight());
         m_Camera->setSize(m_Window->getWidth(), m_Window->getHeight());
     }
 

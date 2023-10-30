@@ -2,9 +2,10 @@
 
 #include "DxUtils.h"
 
+namespace Engine {
+
 template<typename T>
-class UploadBuffer
-{
+class UploadBuffer {
 public:
     UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer) : 
         m_IsConstantBuffer(isConstantBuffer)
@@ -64,3 +65,5 @@ private:
     UINT m_ElementByteSize = 0;
     bool m_IsConstantBuffer = false;
 };
+
+} // namespace Engine

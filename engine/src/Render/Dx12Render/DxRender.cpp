@@ -30,7 +30,7 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 	HRESULT hardwareResult = D3D12CreateDevice(
         nullptr,                  // NULL to use the default adapter
         D3D_FEATURE_LEVEL_11_0,   // The minimum D3D_FEATURE_LEVEL
-        IID_PPV_ARGS(&m_D3dDevice) // 
+        IID_PPV_ARGS(&m_Device) // 
     );
 
 	// Fallback to WARP device.
@@ -41,11 +41,11 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 		ThrowIfFailed(D3D12CreateDevice(
 			pWarpAdapter.Get(),
 			D3D_FEATURE_LEVEL_11_0,
-			IID_PPV_ARGS(&m_D3dDevice))
+			IID_PPV_ARGS(&m_Device))
         );
 	}
 
-    ThrowIfFailed(m_D3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
+    ThrowIfFailed(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
 
     // Check 4X MSAA quality support for our back buffer format.
     // All Direct3D 11 capable devices support 4X MSAA for all render 
@@ -56,7 +56,7 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 	msQualityLevels.SampleCount = 4;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	msQualityLevels.NumQualityLevels = 0;
-	ThrowIfFailed(m_D3dDevice->CheckFeatureSupport(
+	ThrowIfFailed(m_Device->CheckFeatureSupport(
 		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
 		&msQualityLevels,
 		sizeof(msQualityLevels)));
@@ -71,14 +71,14 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     // Default command queue.
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	ThrowIfFailed(m_D3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_CommandQueue)));
+	ThrowIfFailed(m_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_CommandQueue)));
 
-	ThrowIfFailed(m_D3dDevice->CreateCommandAllocator(
+	ThrowIfFailed(m_Device->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(m_DirectCmdListAlloc.GetAddressOf())
     ));
 
-	ThrowIfFailed(m_D3dDevice->CreateCommandList(
+	ThrowIfFailed(m_Device->CreateCommandList(
 		0,                                // For single-GPU operation, set this to zero. 
 		D3D12_COMMAND_LIST_TYPE_DIRECT,   // An optional pointer to the pipeline state object that contains the initial pipeline state for the command list.
 		m_DirectCmdListAlloc.Get(),       // Associated command allocator
@@ -123,35 +123,43 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
     ));
 
     //////////////////////// DESCRIPTOR HEAPS ///////////////////////
-    m_RtvDescPool = std::make_unique<DescriptorPool>(
-        m_D3dDevice->Get(),
+    m_RtvDescPool = std::make_unique<DxDescriptorPool>(
+        m_Device->Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         1000,
     );
 
-    m_DsvDescPool = std::make_unique<DescriptorPool>(
-        m_D3dDevice->Get(),
+    m_DsvDescPool = std::make_unique<DxDescriptorPool>(
+        m_Device->Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         1000,
     );
 
-    m_CbvSrvUavDescPool = std::make_unique<DescriptorPool>(
-        m_D3dDevice->Get(),
+    m_CbvSrvUavDescPool = std::make_unique<DxDescriptorPool>(
+        m_Device->Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         1000,
     );
 
-	m_RenderResource = std::make_unique<RenderResource>(device.Get(), 1000);
-    m_CBPool = std::make_unique<CBPool>();
+    m_GeometryRegistry = std::make_unique<DxGeometryRegistry>(device.Get());
+	m_RenderResource = std::make_unique<DxRenderResource>(device.Get(), 1000);
+
+    auto m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
+        m_DepthStencilFormat,
+        m_Width, m_Height,
+        m_Device.Get(),
+        m_CbvSrvUavDescPool.get(),
+        m_RtvDescPool.get()
+    );
 
     resize(m_Width, m_Height);
 }
 
 void DxRender::resize(uint32_t width, uint32_t height) {
-    assert(m_D3dDevice);
+    assert(m_Device);
 	assert(m_SwapChain);
     assert(m_DirectCmdListAlloc);
 
@@ -159,12 +167,6 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 	flushCommandQueue();
 
     ThrowIfFailed(m_CommandList->Reset(m_DirectCmdListAlloc.Get(), nullptr));
-
-	// Release the previous resources we will be recreating.
-	for (int i = 0; i < c_SwapChainBufferCount; i++) {
-		m_SwapChainBuffer[i].Reset();
-    }
-    m_DepthStencilBuffer.Reset();
 
     // Resize the swap chain.
     ThrowIfFailed(m_SwapChain->ResizeBuffers(
@@ -176,60 +178,24 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 
 	m_CurrBackBuffer = 0;
 
-	for (uint32_t i = 0; i < c_SwapChainBufferCount; i++) {
-		ThrowIfFailed(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_SwapChainBuffer[i])));
-		m_D3dDevice->CreateRenderTargetView(m_SwapChainBuffer[i].Get(), nullptr, m_RtvDescPool->get());
+    for (size_t i = 0; i < c_SwapChainBufferCount; i++) {
+        Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		ThrowIfFailed(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&resource)));
+        
+        m_SwapChainBuffers[i] = std::make_unique<DxRenderTexture>(
+            resource,
+            m_BackBufferFormat,
+            D3D12_RESOURCE_FLAG_NONE,
+            m_Width,
+            m_Height,
+            m_Device.Get(),
+            m_CbvSrvUavDescPool.get(),
+            m_RtvDescPool.get()
+        );
 	}
 
-    // Create the depth/stencil buffer and view.
-    D3D12_RESOURCE_DESC depthStencilDesc;
-    depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    depthStencilDesc.Alignment = 0;
-    depthStencilDesc.Width = m_Width;
-    depthStencilDesc.Height = m_Height;
-    depthStencilDesc.DepthOrArraySize = 1;
-    depthStencilDesc.MipLevels = 1;
-
-	// Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from 
-	// the depth buffer.  Therefore, because we need to create two views to the same resource:
-	//   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
-	//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
-	// we need to create the depth buffer resource with a typeless format.  
-	depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-
-    // depthStencilDesc.SampleDesc.Count = m_4xMsaaState ? 4 : 1;
-    // depthStencilDesc.SampleDesc.Quality = m_4xMsaaState ? (m_4xMsaaQuality - 1) : 0;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	CD3DX12_HEAP_PROPERTIES heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-
-    D3D12_CLEAR_VALUE optClear;
-    optClear.Format = m_DepthStencilFormat;
-    optClear.DepthStencil.Depth = 1.0f;
-    optClear.DepthStencil.Stencil = 0;
-    ThrowIfFailed(m_D3dDevice->CreateCommittedResource(&heapProps,
-		D3D12_HEAP_FLAG_NONE,
-        &depthStencilDesc,
-		D3D12_RESOURCE_STATE_COMMON,
-        &optClear,
-        IID_PPV_ARGS(m_DepthStencilBuffer.GetAddressOf())
-    ));
-
-    // Create descriptor to mip level 0 of entire resource using the format of the resource.
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Format = m_DepthStencilFormat;
-	dsvDesc.Texture2D.MipSlice = 0;
-	m_D3dDevice->CreateDepthStencilView(m_DepthStencilBuffer.Get(), &dsvDesc, m_DsvDescPool->get());
-
-    // Transition the resource from its initial state to be used as a depth buffer.
-    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        m_DepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    m_CommandList->ResourceBarrier(1, &barrier);
+    m_DepthStencilBuffer->resize(width, height);
+    m_DepthStencilBuffer->beginRenderTo(m_CommandList.Get());
 
 	m_ScreenViewport.TopLeftX = 0;
 	m_ScreenViewport.TopLeftY = 0;
@@ -252,9 +218,14 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 	flushCommandQueue();
 }
 
+DxRender::~DxRender() {
+	if (m_Device != nullptr) {
+		flushCommandQueue();
+    }
+}
+
 void DxRender::beginFrame() {
     m_RenderResource->beginFrame(m_CurrFrameIndex, m_Fence.Get());
-    m_CBPool->beginFrame(m_CurrFrameIndex);
 
 	auto cmdListAlloc = m_RenderResource->currFrameResource->cmdListAlloc;
 
@@ -265,6 +236,9 @@ void DxRender::beginFrame() {
     // Indicate a state transition on the resource usage.
 	m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(currentBackBuffer(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+    ID3D12DescriptorHeap* descriptorHeaps[] = { m_CbvSrvUavDescPool.getHeap() };
+    m_CommandList->SetDescriptorHeaps(1, descriptorHeaps);
 }
 
 void DxRender::endFrame() {
@@ -317,55 +291,44 @@ void DxRender::flushCommandQueue() {
 	}
 }
 
-DxRender::~DxRender() {
-	if (m_D3dDevice != nullptr) {
-		flushCommandQueue();
-    }
-}
-
-std::shared_ptr<RenderPass> DxRender::createRenderPass(
-    std::shared_ptr<ShaderProgram> shaderProgram,
-    size_t constantBuffersNum,
-    size_t texturesNum
-) {
-    auto pass = std::make_shared<RenderPass>(m_D3dDevice.Get(), shaderProgram, constantBuffersNum, texturesNum, {m_BackBufferFormat}, m_DepthStencilFormat);
+std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram) {
+    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, {m_BackBufferFormat}, m_DepthStencilFormat);
     return pass;
 }
 
-std::shared_ptr<RenderPass> DxRender::createRenderPass(
-    std::shared_ptr<ShaderProgram> shaderProgram,
-    size_t constantBuffersNum,
-    size_t texturesNum,
-    std::vector<DXGI_FORMAT> rtvFormats,
-    DXGI_FORMAT dsvFormat
-) {
-    auto pass = std::make_shared<RenderPass>(m_D3dDevice.Get(), shaderProgram, constantBuffersNum, texturesNum, rtvFormats, dsvFormat);
+std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat) {
+    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, dsvFormat);
     return pass;
 }
 
-std::shared_ptr<RenderTexture> DxRender::createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height) {
-    auto rt = std::make_shared<RenderTexture>(format, flags, width, height, m_D3dDevice.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
+std::shared_ptr<DxShaderProgram> DxRender::createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, size_t textureSlots) {
+    auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), dataSlots, textureSlots, vertexFile, pixelFile);
+    return shader;
+}
+
+std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height) {
+    auto rt = std::make_shared<DxRenderTexture>(format, flags, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
     return rt;
 }
 
-std::shared_ptr<DepthStencilTexture> DxRender::createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height) {
-    auto dst = std::make_shared<DepthStencilTexture>(format, width, height, m_D3dDevice.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
+std::shared_ptr<DxDepthStencilTexture> DxRender::createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height) {
+    auto dst = std::make_shared<DxDepthStencilTexture>(format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
     return rt;
 }
 
-void DxRender::setRenderPass(std::shared_ptr<RenderPass> pass) {
+void DxRender::setRenderPass(std::shared_ptr<DxRenderPass> pass) {
     pass->bind(m_CommandList.Get());
     m_RenderPass = pass;
 }
 
-void DxRender::setFramebuffer(std::shared_ptr<Framebuffer> fb) {
+void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
     if (m_Framebuffer != nullptr) {
         m_Framebuffer->endRenderTo(m_CommandList.Get());
     }
 
     if (fb == nullptr) {
         // Specify the buffers we are going to render to.
-        m_CommandList->OMSetRenderTargets(1, &currentBackBuffer(), true, &depthStencilView());
+        m_CommandList->OMSetRenderTargets(1, &currentBackBufferView(), true, &m_DepthStencilBuffer->getDsvDescriptor().cpu);
     } else {
         m_Framebuffer->beginRenderTo(m_CommandList.Get());
     }
@@ -377,26 +340,19 @@ void DxRender::clear(float r, float g, float b, float a) {
     const float clearColor[] = { r, g, b, a };
 
     if (m_Framebuffer == nullptr) {
-        m_CommandList->ClearRenderTargetView(currentBackBuffer(), clearColor, 0, nullptr);
-        m_CommandList->ClearDepthStencilView(depthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+        m_CommandList->ClearRenderTargetView(currentBackBufferView(), clearColor, 0, nullptr);
+        m_CommandList->ClearDepthStencilView(m_DepthStencilBuffer->getDsvDescriptor().cpu, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
     } else {
         m_Framebuffer->clear(m_CommandList.Get(), clearColor);
     }
 }
 
 void DxRender::registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) {
-	m_GeometryRegistry->add(geometry, subGeometries, subMeshes);
-}
-
-void DxRender::setShaderParameterTexture(size_t index, D3D12_CPU_DESCRIPTOR_HANDLE srvDescriptor) {
-    // CD3DX12_GPU_DESCRIPTOR_HANDLE tex(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-    // tex.Offset(texture->DiffuseSrvHeapIndex, m_CbvSrvUavDescriptorSize);
-
-    m_CommandList->SetGraphicsRootDescriptorTable(index, srvDescriptor);
+	m_GeometryRegistry->add(geometry, subGeometries, subMeshes, m_CommandList.Get());
 }
 
 void DxRender::drawItem(const std::string& geometry, const std::string& subGeometry) {
-    MeshGeometry* geo = geoRegistry->get(geometry);
+    MeshGeometry* geo = m_GeometryRegistry->get(geometry);
     SubmeshGeometry& subGeo = geo->drawArgs[subGeometry];
 
     m_CommandList->IASetVertexBuffers(0, 1, &geo->vertexBufferView());
@@ -419,18 +375,11 @@ void DxRender::drawItem(const std::string& geometry, const std::string& subGeome
 }
 
 ID3D12Resource* DxRender::currentBackBuffer() const {
-	return m_SwapChainBuffer[m_CurrBackBuffer].Get();
+	return m_SwapChainBuffers[m_CurrBackBuffer]->getResource();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DxRender::currentBackBufferView() const {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		m_RtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		m_CurrBackBuffer,
-		m_RtvDescriptorSize);
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE DxRender::depthStencilView() const {
-	return m_DsvHeap->GetCPUDescriptorHandleForHeapStart();
+    return m_SwapChainBuffers[m_CurrBackBuffer]->getRtvDescriptor().cpu;
 }
 
 } // namespace Engine

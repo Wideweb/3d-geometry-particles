@@ -2,6 +2,8 @@
 #include <comdef.h>
 #include <fstream>
 
+namespace Engine {
+
 using Microsoft::WRL::ComPtr;
 
 DxException::DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber) :
@@ -276,3 +278,5 @@ size_t DxUtils::bitsPerPixel(DXGI_FORMAT fmt) {
             return 0;
     }
 }
+
+} // namespace Engine

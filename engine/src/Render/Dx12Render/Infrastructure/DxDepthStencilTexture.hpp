@@ -3,15 +3,17 @@
 #include "DxUtils.hpp"
 #include "DescriptorPool.hpp"
 
-class DepthStencilTexture {
+namespace Engine {
+
+class DxDepthStencilTexture {
 public:
-    DepthStencilTexture(
+    DxDepthStencilTexture(
         DXGI_FORMAT format,
         size_t width,
         size_t height,
         ID3D12Device* device,
-        DescriptorPool* srvDescPool,
-        DescriptorPool* dsvDescPool);
+        DxDescriptorPool* srvDescPool,
+        DxDescriptorPool* dsvDescPool);
 
     void resize(size_t width, size_t height);
 
@@ -20,14 +22,15 @@ public:
     void transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState);
 
     void beginRenderTo(ID3D12GraphicsCommandList* commandList) {
-        transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        transitionTo(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
 
     void endRenderTo(ID3D12GraphicsCommandList* commandList) {
+        // D3D12_RESOURCE_STATE_COMMON
         transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 
-        void setClearValue(float depth, uint8_t stencil) {
+    void setClearValue(float depth, uint8_t stencil) {
         m_ClearDepthValue = depth;
         m_ClearStencilValue = stencil;
     }
@@ -39,8 +42,8 @@ public:
 
     DXGI_FORMAT getFormat() const noexcept { return m_Format; }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
-    D3D12_CPU_DESCRIPTOR_HANDLE getDsvDescriptor() const noexcept { return m_DsvDescriptor; }
+    DxDescriptor getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
+    DxDescriptor getDsvDescriptor() const noexcept { return m_DsvDescriptor; }
 
     float getClearDepthValue() const noexcept { return m_ClearDepthValue; }
     float getClearStencilValue() const noexcept { return m_ClearStencilValue; }
@@ -52,8 +55,8 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D12Resource>              m_Resource;
     D3D12_RESOURCE_STATES                               m_State;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE                       m_SrvDescriptor;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE                       m_DsvDescriptor;
+    DxDescriptor                                        m_SrvDescriptor;
+    DxDescriptor                                        m_DsvDescriptor;
     float                                               m_ClearDepthValue;
     uint8_t                                             m_ClearStencilValue;
 
@@ -62,3 +65,5 @@ private:
     size_t                                              m_Width;
     size_t                                              m_Height;
 };
+
+} // namespace Engine

@@ -17,35 +17,18 @@ set(SOURCE_LIB
     src/Core/Math.cpp
     src/IO/Window.cpp
     src/IO/Input.cpp
+    src/Render/Abstraction/Camera.cpp
+    src/Render/Abstraction/CrossPlatformRender.cpp
     src/Engine/Application.cpp
     src/Engine/Layer.cpp
     src/Engine/CameraController.cpp
-    src/Render3D/Camera.cpp
-    src/Render3D/Models/Material.cpp
-    src/Render3D/Models/Mesh.cpp
-    src/Render3D/Models/Model.cpp
-    src/Render3D/Renderers/MasterRenderer.cpp
-    src/Render3D/GfxObjects/GfxUtils.cpp
-    src/Render3D/GfxObjects/GfxImage.cpp
-    src/Render3D/GfxObjects/Texture.cpp
-    src/Render3D/GfxObjects/Renderbuffer.cpp
-    src/Render3D/GfxObjects/Framebuffer.cpp
-    src/Render3D/GfxObjects/Shader.cpp
-    src/Render3D/ModelLoader.cpp
-    src/Render3D/ModelFactory.cpp
-    src/Render3D/Viewport.cpp
-    src/Render3D/TextureLoader.cpp
 )
 
 set(INCLUDE_DIRS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/IO
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/GfxObjects
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/Models
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/Renderers
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/Utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render/Abstraction
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb
@@ -71,10 +54,25 @@ if (WIN32)
   list(APPEND SOURCE_LIB
       src/IO/Win/WinWindow.cpp
       src/IO/Win/WinInput.cpp
+      src/Render/Dx12Render/DxDescriptorPool.cpp
+      src/Render/Dx12Render/DxGeometryRegistry.cpp
+      src/Render/Dx12Render/DxRender.cpp
+      src/Render/Dx12Render/DxTextureLoader.cpp
+      src/Render/Dx12Render/DxUtils.cpp
+      src/Render/Dx12Render/Infrastructure/DxDepthStencilTexture.cpp
+      src/Render/Dx12Render/Infrastructure/DxFramebuffer.cpp
+      src/Render/Dx12Render/Infrastructure/DxRenderPass.cpp
+      src/Render/Dx12Render/Infrastructure/DxRenderTexture.cpp
+      src/Render/Dx12Render/Infrastructure/DxShaderProgram.cpp
+      src/Render/Dx12Render/Infrastructure/DxShaderProgramSlot.cpp
   )
 
   list(APPEND INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/IO/Win
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render/Adapters/Dx
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render/Dx12Render
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render/Dx12Render/Frame
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Render/Dx12Render/Infrastructure
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/dx
   )
 endif (WIN32)

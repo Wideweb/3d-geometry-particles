@@ -4,6 +4,8 @@
 
 #include <vector>
 
+namespace Engine {
+
 OpenGLFramebuffer::OpenGLFramebuffer()
     m_RenderTo(false),
     m_Width(0),
@@ -89,3 +91,5 @@ void OpenGLFramebuffer::release() {
         m_Resource = 0;
     }
 }
+
+} // namespace Engine

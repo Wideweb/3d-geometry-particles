@@ -1,18 +1,18 @@
 #include "Window.hpp"
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(RENDER_DX12)
 #include "WinWindow.hpp"
-#elif __APPLE__ || __linux__ || __unix__ || defined(_POSIX_VERSION)
+#elif defined(RENDER_OPENGL)
 #include "SDLWindow.hpp"
 #endif
 
 namespace Engine {
 
-Window *Window::create(const WindowProps &props) {
+Window* Window::create(const WindowProps &props) {
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(DX12)
     return new WinWindow(props);
-#elif __APPLE__ || __linux__ || __unix__ || defined(_POSIX_VERSION)
+#elif defined(OPENGL)
     return new SDLWindow(props);
 #endif
 

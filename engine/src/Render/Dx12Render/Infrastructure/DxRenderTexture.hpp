@@ -1,18 +1,30 @@
 #pragma once
 
 #include "DxUtils.hpp"
-#include "DescriptorPool.hpp"
+#include "DxDescriptorPool.hpp"
 
-class RenderTexture {
+namespace Engine {
+
+class DxRenderTexture {
 public:
-    RenderTexture(
+    DxRenderTexture(
+        Microsoft::WRL::ComPtr<ID3D12Resource> resource,
         DXGI_FORMAT format,
         D3D12_RESOURCE_FLAGS flags,
         size_t width,
         size_t height,
         ID3D12Device* device,
-        DescriptorPool* srvDescPool,
-        DescriptorPool* rtvDescPool);
+        DxDescriptorPool* srvDescPool,
+        DxDescriptorPool* rtvDescPool);
+
+    DxRenderTexture(
+        DXGI_FORMAT format,
+        D3D12_RESOURCE_FLAGS flags,
+        size_t width,
+        size_t height,
+        ID3D12Device* device,
+        DxDescriptorPool* srvDescPool,
+        DxDescriptorPool* rtvDescPool);
 
     void resize(size_t width, size_t height);
 
@@ -43,8 +55,8 @@ public:
     DXGI_FORMAT getFormat() const noexcept { return m_Format; }
     D3D12_RESOURCE_FLAGS getFlags() const noexcept { return m_Flags; }
 
-    CD3DX12_CPU_DESCRIPTOR_HANDLE getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
-    CD3DX12_CPU_DESCRIPTOR_HANDLE getRtvDescriptor() const noexcept { return m_RtvDescriptor; }
+    DxDescriptor getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
+    DxDescriptor getRtvDescriptor() const noexcept { return m_RtvDescriptor; }
 
     const float* getClearColor() const noexcept { return m_ClearColor; }
 
@@ -55,8 +67,8 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D12Resource>              m_Resource;
     D3D12_RESOURCE_STATES                               m_State;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE                       m_SrvDescriptor;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE                       m_RtvDescriptor;
+    DxDescriptor                                        m_SrvDescriptor;
+    DxDescriptor                                        m_RtvDescriptor;
     float                                               m_ClearColor[4];
 
     DXGI_FORMAT                                         m_Format;
@@ -65,3 +77,5 @@ private:
     size_t                                              m_Width;
     size_t                                              m_Height;
 };
+
+} // namespace Engine

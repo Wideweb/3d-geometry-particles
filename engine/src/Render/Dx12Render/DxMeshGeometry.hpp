@@ -2,11 +2,13 @@
 
 #include "DxUtils.h"
 
+namespace Engine {
+
 // Defines a subrange of geometry in a MeshGeometry.  This is for when multiple
 // geometries are stored in one vertex and index buffer.  It provides the offsets
 // and data needed to draw a subset of geometry stores in the vertex and index 
 // buffers so that we can implement the technique described by Figure 6.3.
-struct SubmeshGeometry {
+struct DxSubmeshGeometry {
 	UINT indexCount = 0;
 	UINT startIndexLocation = 0;
 	INT baseVertexLocation = 0;
@@ -16,7 +18,7 @@ struct SubmeshGeometry {
 	// DirectX::BoundingBox bounds;
 };
 
-struct MeshGeometry {
+struct DxMeshGeometry {
 	// Give it a name so we can look it up by name.
 	std::string name;
 
@@ -40,7 +42,7 @@ struct MeshGeometry {
 	// A MeshGeometry may store multiple geometries in one vertex/index buffer.
 	// Use this container to define the Submesh geometries so we can draw
 	// the Submeshes individually.
-	std::unordered_map<std::string, SubmeshGeometry> drawArgs;
+	std::unordered_map<std::string, DxSubmeshGeometry> drawArgs;
 
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView() const {
 		D3D12_VERTEX_BUFFER_VIEW vbv;
@@ -66,3 +68,5 @@ struct MeshGeometry {
 		indexBufferUploader = nullptr;
 	}
 };
+
+} // namespace Engine

@@ -1,12 +1,14 @@
 #pragma once
 
 #include "DxUtils.hpp"
-#include "FrameResource.hpp"
+#include "DxFrameResource.hpp"
 
 #include <memory>
 #include <vector>
 
-class RenderResource {
+namespace Engine {
+
+class DxRenderResource {
   public:
     std::vector<std::unique_ptr<FrameResource>> frameResources;
 
@@ -14,7 +16,7 @@ class RenderResource {
 
     FrameResource* currFrameResource = nullptr;
 
-    RenderResource(ID3D12Device* device) {
+    DxRenderResource(ID3D12Device* device) {
         for (int i = 0; i < 3; i++) {
             frameResources[i] = std::make_unique<FrameResource<TData>>(device);
         }
@@ -39,3 +41,5 @@ class RenderResource {
         currFrameResource->fence = fence;
     }
 }
+
+} // namespace Engine

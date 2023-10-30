@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace Engine {
+
 OpenGLDepthStencilTexture::OpenGLDepthStencilTexture(
     size_t width,
     size_t height
@@ -63,3 +65,5 @@ void OpenGLDepthStencilTexture::release() {
         glDeleteTextures(1, &m_Resource);
     }
 }
+
+} // namespace Engine

@@ -2,6 +2,8 @@
 
 #include "glad/glad.h"
 
+namespace Engine {
+
 class OpenGLRenderTexture {
 public:
     OpenGLRenderTexture(
@@ -43,3 +45,5 @@ private:
     size_t                                              m_Width;
     size_t                                              m_Height;
 };
+
+} // namespace Engine

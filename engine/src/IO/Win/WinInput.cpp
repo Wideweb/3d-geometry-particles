@@ -5,7 +5,6 @@
 
 namespace Engine {
 
-
 void WinInput::update() {}
 
 bool WinInput::IsKeyPressed(KeyCode key) {

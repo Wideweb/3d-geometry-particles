@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace Engine {
+
 OpenGLRenderTexture::OpenGLRenderTexture(
     GLenum format,
     GLenum dataType,
@@ -63,3 +65,5 @@ void OpenGLRenderTexture::bind() const {
 void OpenGLRenderTexture::unbind() const {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+} // namespace Engine

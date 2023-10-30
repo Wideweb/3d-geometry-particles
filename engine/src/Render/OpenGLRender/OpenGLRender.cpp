@@ -3,8 +3,10 @@
 namespace Engine {
 
 OpenGLRender::OpenGLRender(void* window, uint32_t width, uint32_t height) : m_Window(window), m_Width(width), m_Height(height) {
-    
+    m_GeometryRegistry = std::make_unique<OpenGLGeometryRegistry>();
 }
+
+OpenGLRender::~OpenGLRender() { }
 
 void OpenGLRender::beginFrame() {
     
@@ -14,9 +16,15 @@ void OpenGLRender::endFrame() {
     
 }
 
+void OpenGLRender::resize(uint32_t width, uint32_t height) {
+    if (m_Width == width && m_Height == height) {
+        return;
+    }
 
-OpenGLRender::~OpenGLRender() {
+    glViewport(0, 0, width, height);
 
+    m_Width = width;
+    m_Height = height;
 }
 
 void OpenGLRender::setRenderPass(std::shared_ptr<OpenGLRenderPass> pass) {
@@ -31,7 +39,7 @@ void OpenGLRender::setRenderPass(std::shared_ptr<OpenGLRenderPass> pass) {
     m_RenderPass = pass;
 }
 
-void OpenGLRender::setFramebuffer(std::shared_ptr<Framebuffer> fb) {
+void OpenGLRender::setFramebuffer(std::shared_ptr<OpenGLFramebuffer> fb) {
     if (m_Framebuffer != nullptr) {
         m_Framebuffer->endRenderTo();
     }
@@ -46,47 +54,20 @@ void OpenGLRender::setFramebuffer(std::shared_ptr<Framebuffer> fb) {
 }
 
 void OpenGLRender::clear(float r, float g, float b, float a) {
-    const float clearColor[] = { r, g, b, a };
-
-    if (m_Framebuffer == nullptr) {
-        m_CommandList->ClearRenderTargetView(currentBackBuffer(), clearColor, 0, nullptr);
-        m_CommandList->ClearDepthStencilView(depthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-    } else {
-        m_Framebuffer->clear(m_CommandList.Get(), clearColor);
-    }
+    glClearColor(r, g, b, a);
 }
 
 void OpenGLRender::registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) {
 	m_GeometryRegistry->add(geometry, subGeometries, subMeshes);
 }
 
-void OpenGLRender::setShaderParameterTexture(size_t index, GLuint resource) {
-    glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(GL_TEXTURE_2D, resource);
-    glUniform1i(location, index);
-}
-
 void OpenGLRender::drawItem(const std::string& geometry, const std::string& subGeometry) {
-    MeshGeometry* geo = geoRegistry->get(geometry);
-    SubmeshGeometry& subGeo = geo->drawArgs[subGeometry];
+    OpenGLSubmeshGeometry* geo = m_GeometryRegistry->get(geometry);
+    OpenGLMeshGeometry& subGeo = geo->drawArgs[subGeometry];
 
-    m_CommandList->IASetVertexBuffers(0, 1, &geo->vertexBufferView());
-    m_CommandList->IASetIndexBuffer(&geo->indexBufferView());
-    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    uint32_t indexCountPerInstance = subGeo.indexCount;
-    uint32_t instanceCount = 1;
-    uint32_t startIndexLocation = subGeo.startIndexLocation;
-    uint32_t baseVertexLocation = subGeo.baseVertexLocation;
-    uint32_t startInstanceLocation = 0;
-
-    m_CommandList->DrawIndexedInstanced(
-        indexCountPerInstance,
-        instanceCount,
-        startIndexLocation,
-        baseVertexLocation,
-        startInstanceLocation
-    );
+    glBindVertexArray(geo->VAO);
+    glDrawElementsBaseVertex(GL_TRIANGLES, subGeo.indexCount, GL_UNSIGNED_INT, subGeo.startIndexLocation, subGeo.baseVertexLocation);
+    glBindVertexArray(0);
 }
 
 } // namespace Engine

@@ -3,11 +3,13 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <string>
+#include <cstring>
 
 #include "d3dx12.h"
 
-class DxUtils
-{
+namespace Engine {
+
+class DxUtils {
 public:
 
     static bool IsKeyDown(int vkeyCode);
@@ -76,3 +78,10 @@ public:
     if(FAILED(hr__)) { throw DxException(hr__, L#x, wfn, __LINE__); } \
 }
 #endif
+
+struct DxDescriptor {
+    CD3DX12_CPU_DESCRIPTOR_HANDLE cpu;
+    CD3DX12_GPU_DESCRIPTOR_HANDLE gpu;
+};
+
+} // namespace Engine
