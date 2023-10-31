@@ -11,9 +11,7 @@ namespace Engine {
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// TEXTURE FORMAT //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-enum class CROSS_PLATFROM_TEXTURE_FORMATS {
-    RGBA8
-}
+enum class CROSS_PLATFROM_TEXTURE_FORMATS { RGBA8 };
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// RENDER TEXTURE //////////////////////////////
@@ -86,7 +84,7 @@ public:
 
     virtual std::shared_ptr<CrossPlatformRenderTexture> createRenderTexture(CROSS_PLATFROM_TEXTURE_FORMATS format, size_t width, size_t height) = 0;
 
-    virtual std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(std::shared_ptr<DxShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) = 0;
+    virtual std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) = 0;
 
     virtual std::shared_ptr<CrossPlatformFramebuffer> createFramebuffer() = 0;
 

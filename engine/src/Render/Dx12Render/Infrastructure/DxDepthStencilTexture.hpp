@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DxUtils.hpp"
-#include "DescriptorPool.hpp"
+#include "DxDescriptorPool.hpp"
 
 namespace Engine {
 
@@ -26,8 +26,8 @@ public:
     }
 
     void endRenderTo(ID3D12GraphicsCommandList* commandList) {
-        // D3D12_RESOURCE_STATE_COMMON
-        transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        // D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+        transitionTo(commandList, D3D12_RESOURCE_STATE_COMMON);
     }
 
     void setClearValue(float depth, uint8_t stencil) {
@@ -50,8 +50,8 @@ public:
 
 private:
     ID3D12Device*                                       m_Device;
-    DescriptorPool*                                     m_SrvDescPool;
-    DescriptorPool*                                     m_DsvDescPool;
+    DxDescriptorPool*                                   m_SrvDescPool;
+    DxDescriptorPool*                                   m_DsvDescPool;
 
     Microsoft::WRL::ComPtr<ID3D12Resource>              m_Resource;
     D3D12_RESOURCE_STATES                               m_State;

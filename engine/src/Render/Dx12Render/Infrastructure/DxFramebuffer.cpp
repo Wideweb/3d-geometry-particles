@@ -40,7 +40,8 @@ void DxFramebuffer::beginRenderTo(ID3D12GraphicsCommandList* commandList) {
 
     m_DSAttachment->beginRenderTo(commandList);
 
-    commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), true, &m_DSAttachment->getDsvDescriptor().cpu);
+    auto dsDescriptor = m_DSAttachment->getDsvDescriptor().cpu;
+    commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), true, &dsDescriptor);
 
     m_RenderTo = true;
 }

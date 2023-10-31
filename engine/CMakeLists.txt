@@ -77,7 +77,7 @@ if (WIN32)
   )
 endif (WIN32)
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_LIB})
+add_library(${PROJECT_NAME} STATIC ${SOURCE_LIB})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
@@ -122,7 +122,8 @@ endif(UNIX)
 if (WIN32)
 
   target_link_libraries(${PROJECT_NAME} PRIVATE
-      d3d11.lib dxgi.lib dxguid.lib uuid.lib
+      d3d12.lib dxgi.lib dxguid.lib uuid.lib
+      dxgi.lib d3dcompiler.lib
       kernel32.lib user32.lib
       comdlg32.lib advapi32.lib shell32.lib
       ole32.lib oleaut32.lib
@@ -142,4 +143,4 @@ endif(WIN32)
 # target_link_libraries(${PROJECT_NAME} PRIVATE -lprofiler)
 # target_link_libraries(${PROJECT_NAME} PRIVATE -ltcmalloc)
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/shaders DESTINATION ${OUTPUT_DIRECTORY})
+#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/Render3D/shaders DESTINATION ${OUTPUT_DIRECTORY})

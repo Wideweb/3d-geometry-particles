@@ -10,9 +10,9 @@ namespace Engine {
 
 Window* Window::create(const WindowProps &props) {
 
-#if defined(DX12)
+#if defined(RENDER_DX12)
     return new WinWindow(props);
-#elif defined(OPENGL)
+#elif defined(RENDER_OPENGL)
     return new SDLWindow(props);
 #endif
 

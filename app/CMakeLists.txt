@@ -9,11 +9,9 @@ set(CMAKE_UNITY_BUILD ON)
 set(SOURCE_EXE 
     src/main.cpp
     src/AppLayer.cpp
-    src/Geometry.cpp
-    src/GeometryParticle.cpp
-)	
+)
 
-add_executable(${PROJECT_NAME} ${SOURCE_EXE})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCE_EXE})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
 

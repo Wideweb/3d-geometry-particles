@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AdapterInterface.hpp"
+#include "CrossPlatformRender.hpp"
 #include "OpenGLRenderTexture.hpp"
 #include "OpenGLShaderProgram.hpp"
 #include "OpenGLRenderPass.hpp"

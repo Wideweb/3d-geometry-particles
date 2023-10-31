@@ -106,7 +106,13 @@ void DxRenderTexture::resize(size_t width, size_t height) {
     m_Device->CreateRenderTargetView(m_Resource.Get(), nullptr, m_RtvDescriptor.cpu);
 
     // Create SRV.
-    m_Device->CreateShaderResourceView(m_Resource.Get(), nullptr, m_SrvDescriptor.cpu);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = m_Format;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = -1;
+    m_Device->CreateShaderResourceView(m_Resource.Get(), &srvDesc, m_SrvDescriptor.cpu);
 
     m_Width = width;
     m_Height = height;
@@ -126,7 +132,8 @@ void DxRenderTexture::release() {
 }
 
 void DxRenderTexture::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState));
+    auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState);
+    commandList->ResourceBarrier(1, &barrier);
     m_State = afterState;
 }
 

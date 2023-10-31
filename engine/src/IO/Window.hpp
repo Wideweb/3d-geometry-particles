@@ -4,6 +4,8 @@
 #include <glm/vec2.hpp>
 #include <string>
 
+#define RENDER_DX12
+
 namespace Engine {
 
 enum class EventType { None = 0, MouseMoved, MouseDown, MouseUp, MouseWheel, WindowResized, WindowClosed, TextInput };
@@ -13,7 +15,7 @@ struct MouseEvent {
     float y;
     EventType type;
     bool handled = false;
-    void *data;
+    void *data = nullptr;
 
     MouseEvent(float x, float y, EventType type) : x(x), y(y), type(type) {}
     MouseEvent() : MouseEvent(0.0f, 0.0f, EventType::None) {}

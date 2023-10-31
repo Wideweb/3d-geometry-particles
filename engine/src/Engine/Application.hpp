@@ -6,7 +6,6 @@
 #include "Layer.hpp"
 #include "Time.hpp"
 
-#define RENDER_DX12
 #include "Window.hpp"
 #include "CrossPlatformRender.hpp"
 

@@ -10,7 +10,7 @@
 
 namespace Engine {
 
-DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(window), m_Width(width), m_Height(height) {
+DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HWND)window), m_Width(width), m_Height(height) {
     using namespace std;
     using namespace std::string_view_literals;
     using Microsoft::WRL::ComPtr;
@@ -46,6 +46,8 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 	}
 
     ThrowIfFailed(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
+
+    UINT64 f = m_Fence->GetCompletedValue();
 
     // Check 4X MSAA quality support for our back buffer format.
     // All Direct3D 11 capable devices support 4X MSAA for all render 
@@ -124,35 +126,35 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height) : m_Window(win
 
     //////////////////////// DESCRIPTOR HEAPS ///////////////////////
     m_RtvDescPool = std::make_unique<DxDescriptorPool>(
-        m_Device->Get(),
+        m_Device.Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
-        1000,
+        1000
     );
 
     m_DsvDescPool = std::make_unique<DxDescriptorPool>(
-        m_Device->Get(),
+        m_Device.Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
-        1000,
+        1000
     );
 
     m_CbvSrvUavDescPool = std::make_unique<DxDescriptorPool>(
-        m_Device->Get(),
+        m_Device.Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
-        1000,
+        1000
     );
 
-    m_GeometryRegistry = std::make_unique<DxGeometryRegistry>(device.Get());
-	m_RenderResource = std::make_unique<DxRenderResource>(device.Get(), 1000);
+    m_GeometryRegistry = std::make_unique<DxGeometryRegistry>(m_Device.Get());
+    m_RenderResource = std::make_unique<DxRenderResource>(m_Device.Get());
 
-    auto m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
+    m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
         m_DepthStencilFormat,
         m_Width, m_Height,
         m_Device.Get(),
         m_CbvSrvUavDescPool.get(),
-        m_RtvDescPool.get()
+        m_DsvDescPool.get()
     );
 
     resize(m_Width, m_Height);
@@ -204,7 +206,7 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 	m_ScreenViewport.MinDepth = 0.0f;
 	m_ScreenViewport.MaxDepth = 1.0f;
 
-    m_ScissorRect = { 0, 0, m_Width, m_Height };
+    m_ScissorRect = { 0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height) };
 
     m_CommandList->RSSetViewports(1, &m_ScreenViewport);
     m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
@@ -234,17 +236,19 @@ void DxRender::beginFrame() {
     ThrowIfFailed(cmdListAlloc->Reset());
 
     // Indicate a state transition on the resource usage.
-	m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(currentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    auto toRTBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT,
+                                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
+    m_CommandList->ResourceBarrier(1, &toRTBarrier);
 
-    ID3D12DescriptorHeap* descriptorHeaps[] = { m_CbvSrvUavDescPool.getHeap() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = { m_CbvSrvUavDescPool->getHeap() };
     m_CommandList->SetDescriptorHeaps(1, descriptorHeaps);
 }
 
 void DxRender::endFrame() {
     // Indicate a state transition on the resource usage.
-	m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+    auto toPresentBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        currentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    m_CommandList->ResourceBarrier(1, &toPresentBarrier);
 
     // Done recording commands.
     ThrowIfFailed(m_CommandList->Close());
@@ -254,7 +258,7 @@ void DxRender::endFrame() {
     m_CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
     // Swap the back and front buffers
-    ThrowIfFailed(mSwapChain->Present(0, 0));
+    ThrowIfFailed(m_SwapChain->Present(0, 0));
 	m_CurrBackBuffer = (m_CurrBackBuffer + 1) % c_SwapChainBufferCount;
 
     // Advance the fence value to mark commands up to this fence point.
@@ -280,7 +284,7 @@ void DxRender::flushCommandQueue() {
 
 	// Wait until the GPU has completed commands up to this fence point.
     if (m_Fence->GetCompletedValue() < m_CurrentFence) {
-        HANDLE eventHandle = CreateEvent(nullptr, false, false, EVENT_ALL_ACCESS);
+        HANDLE eventHandle = CreateEventEx(nullptr, "FLUSH", false, EVENT_ALL_ACCESS);
 
         // Fire event when GPU hits current fence.  
         ThrowIfFailed(m_Fence->SetEventOnCompletion(m_CurrentFence, eventHandle));
@@ -292,7 +296,8 @@ void DxRender::flushCommandQueue() {
 }
 
 std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram) {
-    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, {m_BackBufferFormat}, m_DepthStencilFormat);
+    std::vector<DXGI_FORMAT> rtvFormats = {m_BackBufferFormat};
+    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, m_DepthStencilFormat);
     return pass;
 }
 
@@ -302,7 +307,7 @@ std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShade
 }
 
 std::shared_ptr<DxShaderProgram> DxRender::createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, size_t textureSlots) {
-    auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), dataSlots, textureSlots, vertexFile, pixelFile);
+    auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), vertexFile, pixelFile, dataSlots, textureSlots);
     return shader;
 }
 
@@ -313,7 +318,7 @@ std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(DXGI_FORMAT forma
 
 std::shared_ptr<DxDepthStencilTexture> DxRender::createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height) {
     auto dst = std::make_shared<DxDepthStencilTexture>(format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
-    return rt;
+    return dst;
 }
 
 void DxRender::setRenderPass(std::shared_ptr<DxRenderPass> pass) {
@@ -328,7 +333,9 @@ void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
 
     if (fb == nullptr) {
         // Specify the buffers we are going to render to.
-        m_CommandList->OMSetRenderTargets(1, &currentBackBufferView(), true, &m_DepthStencilBuffer->getDsvDescriptor().cpu);
+        auto rtDescriptor = currentBackBufferView();
+        auto dsDescriptor = m_DepthStencilBuffer->getDsvDescriptor().cpu;
+        m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
     } else {
         m_Framebuffer->beginRenderTo(m_CommandList.Get());
     }
@@ -343,7 +350,7 @@ void DxRender::clear(float r, float g, float b, float a) {
         m_CommandList->ClearRenderTargetView(currentBackBufferView(), clearColor, 0, nullptr);
         m_CommandList->ClearDepthStencilView(m_DepthStencilBuffer->getDsvDescriptor().cpu, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
     } else {
-        m_Framebuffer->clear(m_CommandList.Get(), clearColor);
+        m_Framebuffer->clear(m_CommandList.Get());
     }
 }
 
@@ -352,11 +359,14 @@ void DxRender::registerGeometry(const std::string& geometry, const std::vector<s
 }
 
 void DxRender::drawItem(const std::string& geometry, const std::string& subGeometry) {
-    MeshGeometry* geo = m_GeometryRegistry->get(geometry);
-    SubmeshGeometry& subGeo = geo->drawArgs[subGeometry];
+    const DxMeshGeometry* geo = m_GeometryRegistry->get(geometry);
+    const DxSubmeshGeometry& subGeo = geo->drawArgs.at(subGeometry);
 
-    m_CommandList->IASetVertexBuffers(0, 1, &geo->vertexBufferView());
-    m_CommandList->IASetIndexBuffer(&geo->indexBufferView());
+    auto vertexBufferView = geo->vertexBufferView();
+    auto indexBufferView = geo->indexBufferView();
+
+    m_CommandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+    m_CommandList->IASetIndexBuffer(&indexBufferView);
     m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     uint32_t indexCountPerInstance = subGeo.indexCount;

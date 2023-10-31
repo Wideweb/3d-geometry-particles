@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AdapterInterface.hpp"
+#include "CrossPlatformRender.hpp"
 #include "DxRenderTexture.hpp"
 #include "DxDepthStencilTexture.hpp"
 #include "DxShaderProgram.hpp"
@@ -34,7 +34,7 @@ public:
     }
 
     void resize(size_t width, size_t height) override {
-        nativeRT->resize(width, height);
+        m_NativeRT->resize(width, height);
     }
 
     std::shared_ptr<DxRenderTexture> getNative() { return m_NativeRT; }
@@ -98,7 +98,7 @@ public:
     std::shared_ptr<DxRenderPass> getNative() { return m_NativeRP; }
 
 private:
-    std::shared_ptr<DxShaderProgram> m_NativeRP;
+    std::shared_ptr<DxRenderPass> m_NativeRP;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -135,6 +135,8 @@ public:
     std::shared_ptr<CrossPlatformDepthStencilTexture> getDSAttachment() const noexcept override {
         return m_DSAttachment;
     }
+
+    std::shared_ptr<DxFramebuffer> getNative() { return m_NativeFB; }
 
 private:
     std::shared_ptr<DxFramebuffer>                             m_NativeFB;
@@ -189,11 +191,11 @@ public:
     }
 
     std::shared_ptr<CrossPlatformRenderTexture> createRenderTexture(CROSS_PLATFROM_TEXTURE_FORMATS format, size_t width, size_t height) override {
-        auto nativeRT = m_NativeRender->createDepthStencilTexture(getDxTextureFormat(format), D3D12_RESOURCE_FLAG_NONE, width, height);
+        auto nativeRT = m_NativeRender->createRenderTexture(getDxTextureFormat(format), D3D12_RESOURCE_FLAG_NONE, width, height);
         return std::make_shared<DxRenderTextureWrapper>(nativeRT);
     }
 
-    std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(std::shared_ptr<DxShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) override {
+    std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) override {
         auto nativeShaderProgram = m_NativeRender->createShaderProgram(vertexFile, pixelFile, dataSlots, textureSlots.size());
         return std::make_shared<DxShaderProgramWrapper>(nativeShaderProgram);
     }

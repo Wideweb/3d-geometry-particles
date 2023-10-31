@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <array>
 
 namespace Engine {
 
@@ -15,9 +16,9 @@ public:
     DxShaderProgram(
         ID3D12Device* device,
         const std::string& vertexFile,
-        const std::string& pixelFile
+        const std::string& pixelFile,
         const std::vector<size_t>& dataSlots,
-        size_t textureSlots) noexcept;
+        size_t textureSlots);
 
     void setDataSlot(size_t index, void* data);
     void setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE srvDescriptor);
@@ -30,6 +31,8 @@ public:
 
     ID3D12RootSignature* getRootSignature() const noexcept { return m_RootSignature.Get(); }
     const std::vector<D3D12_INPUT_ELEMENT_DESC>& getInputLayout() const noexcept { return m_InputLayout; }
+
+    std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> getStaticSamplers();
 
 private:
     ID3D12Device*                                     m_Device;

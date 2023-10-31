@@ -29,8 +29,8 @@ DxDescriptorPool::~DxDescriptorPool()
 
 DxDescriptor DxDescriptorPool::get()
 {
-    CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandleCPU(m_Heap->GetGPUDescriptorHandleForHeapStart());
-    CD3DX12_GPU_DESCRIPTOR_HANDLE heapHandleGPU(m_Heap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandleCPU(m_Heap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_GPU_DESCRIPTOR_HANDLE heapHandleGPU(m_Heap->GetGPUDescriptorHandleForHeapStart());
 
     int offset = m_Size;
     if (m_Free.size() > 0) {

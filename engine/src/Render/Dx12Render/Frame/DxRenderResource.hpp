@@ -4,42 +4,40 @@
 #include "DxFrameResource.hpp"
 
 #include <memory>
-#include <vector>
+#include <array>
 
 namespace Engine {
 
 class DxRenderResource {
   public:
-    std::vector<std::unique_ptr<FrameResource>> frameResources;
+    std::array<std::unique_ptr<DxFrameResource>, 3> frameResources;
 
     uint64_t currFrameIndex = 0;
 
-    FrameResource* currFrameResource = nullptr;
+    DxFrameResource *currFrameResource = nullptr;
 
-    DxRenderResource(ID3D12Device* device) {
+    DxRenderResource(ID3D12Device *device) {
         for (int i = 0; i < 3; i++) {
-            frameResources[i] = std::make_unique<FrameResource<TData>>(device);
+            frameResources[i] = std::make_unique<DxFrameResource>(device);
         }
 
         currFrameResource = frameResources[0].get();
     }
 
-    void beginFrame(int frameIndex, ID3D12Fence* fence) {
+    void beginFrame(int frameIndex, ID3D12Fence *fence) {
         currFrameResource = frameResources[frameIndex].get();
 
         // Has the GPU finished processing the commands of the current frame resource?
         // If not, wait until the GPU has completed commands up to this fence point.
         if (currFrameResource->fence != 0 && fence->GetCompletedValue() < currFrameResource->fence) {
-            HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+            HANDLE eventHandle = CreateEvent(nullptr, false, false, TEXT("WriteEvent"));
             ThrowIfFailed(fence->SetEventOnCompletion(currFrameResource->fence, eventHandle));
             WaitForSingleObject(eventHandle, INFINITE);
             CloseHandle(eventHandle);
         }
     }
 
-    void setFence(uint64_t fence) {
-        currFrameResource->fence = fence;
-    }
-}
+    void setFence(uint64_t fence) { currFrameResource->fence = fence; }
+};
 
 } // namespace Engine

@@ -28,7 +28,7 @@ DxDepthStencilTexture::DxDepthStencilTexture(
         throw std::runtime_error("CheckFeatureSupport");
     }
 
-    UINT required = D3D12_FORMAT_SUPPORT1_TEXTURE2D | D3D12_FORMAT_SUPPORT1_RENDER_TARGET;
+    UINT required = D3D12_FORMAT_SUPPORT1_TEXTURE2D | D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL;
     if ((formatSupport.Support1 & required) != required) {
 #ifdef _DEBUG
         char buff[128] = {};
@@ -52,23 +52,36 @@ void DxDepthStencilTexture::resize(size_t width, size_t height) {
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-    D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(m_Format,
-        static_cast<UINT64>(width),
-        static_cast<UINT>(height),
-        1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    //D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(m_Format,
+      //  static_cast<UINT64>(width),
+        //static_cast<UINT>(height),
+        //1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+    D3D12_RESOURCE_DESC desc;
+    desc.Format = m_Format;
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Alignment = 0;
+    desc.Width = static_cast<UINT64>(width);
+    desc.Height = static_cast<UINT>(height);
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     D3D12_CLEAR_VALUE clearValue;
     clearValue.Format = m_Format;
     clearValue.DepthStencil.Depth = m_ClearDepthValue;
     clearValue.DepthStencil.Stencil = m_ClearStencilValue;
 
-    m_State = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    m_State = D3D12_RESOURCE_STATE_COMMON;
 
     // Create a render target
     ThrowIfFailed(
         m_Device->CreateCommittedResource(
             &heapProperties,
-            D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            D3D12_HEAP_FLAG_NONE,
             &desc,
             m_State,
             &clearValue,
@@ -78,11 +91,17 @@ void DxDepthStencilTexture::resize(size_t width, size_t height) {
 
     // SetDebugObjectName(m_resource.Get(), L"DxDepthStencilTexture RT");
 
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Format = m_Format;
+	dsvDesc.Texture2D.MipSlice = 0;
+
     // Create DSV.
-    m_Device->CreateDepthStencilView(m_Resource.Get(), nullptr, m_DsvDescriptor.cpu);
+    m_Device->CreateDepthStencilView(m_Resource.Get(), &dsvDesc, m_DsvDescriptor.cpu);
 
     // Create SRV.
-    m_Device->CreateShaderResourceView(m_Resource.Get(), nullptr, m_SrvDescriptor.cpu);
+    // m_Device->CreateShaderResourceView(m_Resource.Get(), nullptr, m_SrvDescriptor.cpu);
 
     m_Width = width;
     m_Height = height;
@@ -102,7 +121,8 @@ void DxDepthStencilTexture::release() {
 }
 
 void DxDepthStencilTexture::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState));
+    auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState);
+	commandList->ResourceBarrier(1, &barrier);
     m_State = afterState;
 }
 

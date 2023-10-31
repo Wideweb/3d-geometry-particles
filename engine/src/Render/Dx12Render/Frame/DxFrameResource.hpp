@@ -14,12 +14,10 @@ struct DxFrameResource {
 
     uint64_t fence = 0;
 
-    DxFrameResource(ID3D12Device* device, size_t capacity) {
-        ThrowIfFailed(device->CreateCommandAllocator(
-            D3D12_COMMAND_LIST_TYPE_DIRECT,
-            IID_PPV_ARGS(cmdListAlloc.GetAddressOf())
-        ));
+    DxFrameResource(ID3D12Device *device) {
+        ThrowIfFailed(
+            device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdListAlloc.GetAddressOf())));
     }
-}
+};
 
 } // namespace Engine

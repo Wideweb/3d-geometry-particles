@@ -11,11 +11,11 @@ const DxMeshGeometry* DxGeometryRegistry::get(const std::string& geometry) const
 void DxGeometryRegistry::add(
     const std::string& geometry,
     const std::vector<std::string>& subGeometries,
-    const std::vector<Mesh>& subMeshes
+    const std::vector<Mesh>& subMeshes,
     ID3D12GraphicsCommandList* commandList
 ) {
     auto geo = std::make_unique<DxMeshGeometry>();
-    geo->Name = geometry;
+    geo->name = geometry;
     
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
@@ -24,10 +24,10 @@ void DxGeometryRegistry::add(
         auto& id = subGeometries[i];
         auto& mesh = subMeshes[i];
 
-        SubmeshGeometry subGeo;
-        subGeo.indexCount = (UINT)mesh.indices.size();
-        subGeo.startIndexLocation = indices.size();
-        subGeo.baseVertexLocation = vertices.size();
+        DxSubmeshGeometry subGeo;
+        subGeo.indexCount = static_cast<UINT>(mesh.indices.size());
+        subGeo.startIndexLocation = static_cast<UINT>(indices.size());
+        subGeo.baseVertexLocation = static_cast<UINT>(vertices.size());
 
         indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
         vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
@@ -35,27 +35,25 @@ void DxGeometryRegistry::add(
         geo->drawArgs[id] = subGeo;
     }
 
-    const size_t vbByteSize = vertices.size() * sizeof(Vertex);
-    const size_t ibByteSize = indices.size() * sizeof(uint16_t);
+    const UINT vbByteSize = static_cast<UINT>(vertices.size() * sizeof(Vertex));
+    const UINT ibByteSize = static_cast<UINT>(indices.size() * sizeof(uint16_t));
 
     ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->vertexBufferCPU));
     CopyMemory(geo->vertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->indexBufferCPU));
     CopyMemory(geo->indexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-    geo->vertexBufferGPU = DxUtils::CreateDefaultBuffer(m_Device,
-        m_CommandList, vertices.data(), vbByteSize, geo->vertexBufferUploader);
+    geo->vertexBufferGPU = DxUtils::CreateDefaultBuffer(m_Device, commandList, vertices.data(), vbByteSize, geo->vertexBufferUploader);
 
-    geo->indexBufferGPU = DxUtils::CreateDefaultBuffer(m_Device,
-        m_CommandList, indices.data(), ibByteSize, geo->indexBufferUploader);
+    geo->indexBufferGPU = DxUtils::CreateDefaultBuffer(m_Device, commandList, indices.data(), ibByteSize, geo->indexBufferUploader);
 
     geo->vertexByteStride = sizeof(Vertex);
     geo->vertexBufferByteSize = vbByteSize;
     geo->indexFormat = DXGI_FORMAT_R16_UINT;
     geo->indexBufferByteSize = ibByteSize;
 
-    m_Data[geo->Name] = std::move(geo);
+    m_Data[geo->name] = std::move(geo);
 }
 
 } // namespace Engine

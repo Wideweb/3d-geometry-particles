@@ -7,10 +7,9 @@ namespace Engine {
 DxShaderProgram::DxShaderProgram(
     ID3D12Device* device,
     const std::string& vertexFile,
-    const std::string& pixelFile
+    const std::string& pixelFile,
     const std::vector<size_t>& dataSlots,
-    size_t textureSlots,
-) noexcept {   
+    size_t textureSlots) {   
     m_Device = device;
 
     m_VertexShader = DxUtils::CompileShader(vertexFile, nullptr, "VS", "vs_5_1");
@@ -100,7 +99,7 @@ void DxShaderProgram::setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE s
 }
 
 void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture) {
-    setTextureSlot(renderTexture->getSrvDescriptor().gpu);
+    setTextureSlot(index, renderTexture->getSrvDescriptor().gpu);
 }
 
 void DxShaderProgram::bind(ID3D12GraphicsCommandList* commandList) {

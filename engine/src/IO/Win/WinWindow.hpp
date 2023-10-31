@@ -38,8 +38,8 @@ class WinWindow : public Window {
     virtual void readInput() override;
     virtual void swapBuffers() override;
     virtual void shutDown() override;
-    virtual void *getNaviteWindow() const override;
-    virtual void *getContext() const override;
+    virtual void* getNaviteWindow() const override;
+    virtual void* getContext() const override;
     virtual MouseEvent &getMouseEvent() override;
 
     LRESULT msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

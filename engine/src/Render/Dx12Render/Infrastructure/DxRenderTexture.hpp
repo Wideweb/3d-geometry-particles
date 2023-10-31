@@ -62,8 +62,8 @@ public:
 
 private:
     ID3D12Device*                                       m_Device;
-    DescriptorPool*                                     m_SrvDescPool;
-    DescriptorPool*                                     m_RtvDescPool;
+    DxDescriptorPool*                                   m_SrvDescPool;
+    DxDescriptorPool*                                   m_RtvDescPool;
 
     Microsoft::WRL::ComPtr<ID3D12Resource>              m_Resource;
     D3D12_RESOURCE_STATES                               m_State;

@@ -20,7 +20,7 @@ public:
     void bind(ID3D12GraphicsCommandList* commandList);
 
 private:
-    std::shared_ptr<DxShaderProgram>               m_ShaderProgram,
+    std::shared_ptr<DxShaderProgram>               m_ShaderProgram;
     Microsoft::WRL::ComPtr<ID3D12PipelineState>    m_Pso;
 };
 

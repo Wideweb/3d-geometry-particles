@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Layer.hpp"
-#include "MasterRenderer.hpp"
 #include "Window.hpp"
 
 #include <string>

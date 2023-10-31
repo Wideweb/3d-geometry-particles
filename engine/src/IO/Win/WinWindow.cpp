@@ -43,7 +43,7 @@ WinWindow::WinWindow(const WindowProps &props) {
 	wc.hCursor       = LoadCursor(0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 	wc.lpszMenuName  = 0;
-	wc.lpszClassName = L"MainWnd";
+	wc.lpszClassName = "MainWnd";
 
     if (!RegisterClass(&wc)) {
         cerr << "RegisterClass Failed." << endl;
@@ -57,8 +57,8 @@ WinWindow::WinWindow(const WindowProps &props) {
 	int height = R.bottom - R.top;
 
     m_Window = CreateWindow(
-        L"MainWnd",          // Window class
-        L"Engine",           // Window text
+        "MainWnd",           // Window class
+        "Engine",            // Window text
         WS_OVERLAPPEDWINDOW, // Window Style
         CW_USEDEFAULT,       // Window initial horizontal position
         CW_USEDEFAULT,       // Window initial vertical position
@@ -124,14 +124,19 @@ LRESULT WinWindow::msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		m_Props.height = HIWORD(lParam);
 
 		WindowEvent event(EventType::WindowResized);
-		m_windowEventCallback(event);
+        if (m_windowEventCallback) {
+            m_windowEventCallback(event);
+        }
+        return 0;
 	}
 
 	// WM_DESTROY is sent when the window is being destroyed.
 	case WM_DESTROY:
 	{
         WindowEvent event(EventType::WindowClosed);
-        m_windowEventCallback(event);
+        if (m_windowEventCallback) {
+            m_windowEventCallback(event);
+        }
         PostQuitMessage(0);
         return 0;
 	}
@@ -207,6 +212,8 @@ void WinWindow::getDrawableSize(int &width, int &height) const {
     width = m_Props.width;
     height = m_Props.height;
 }
+
+void WinWindow::swapBuffers() { }
 
 void WinWindow::shutDown() { }
 

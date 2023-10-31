@@ -1,5 +1,7 @@
 #include "CrossPlatformRender.hpp"
 
+#define RENDER_DX12
+
 #if defined(RENDER_DX12)
 #include "AdapterDx.hpp"
 #elif defined(RENDER_OPENGL)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DxUtils.h"
+#include "DxUtils.hpp"
 
 namespace Engine {
 

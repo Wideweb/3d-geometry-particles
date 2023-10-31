@@ -1,10 +1,13 @@
 #include "DxTextureLoader.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.hpp"
+
+#include <iostream>
 
 namespace Engine {
 
-ID3D12Resource* TextureLoader::loadTextureFromFile(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, const std::string& filename) {
+ID3D12Resource* DxTextureLoader::loadTextureFromFile(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, const std::string& filename) {
     // Загрузка изображения с помощью библиотеки stb_image
     int width, height, channels;
     unsigned char* imageData = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);

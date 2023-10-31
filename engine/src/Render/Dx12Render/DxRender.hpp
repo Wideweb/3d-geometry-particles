@@ -14,9 +14,6 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include <dxgi1_4.h>
-#include <d3d12.h>
-#include <wrl/client.h>
 #include <vector>
 #include <memory>
 #include <unordered_map>
@@ -53,8 +50,8 @@ class DxRender {
     static const int c_SwapChainBufferCount = 2;
     uint32_t m_CurrBackBuffer = 0;
     
-    std::unique<DxRenderTexture> m_SwapChainBuffers[c_SwapChainBufferCount];
-    std::unique<DxDepthStencilTexture> m_DepthStencilBuffer;
+    std::unique_ptr<DxRenderTexture> m_SwapChainBuffers[c_SwapChainBufferCount];
+    std::unique_ptr<DxDepthStencilTexture> m_DepthStencilBuffer;
 
     uint32_t m_RtvDescriptorSize = 0;
 
@@ -69,6 +66,9 @@ class DxRender {
     uint32_t m_4xMsaaQuality = 0;  // quality level of 4X MSAA
 
     std::unique_ptr<DxGeometryRegistry> m_GeometryRegistry;
+
+    ID3D12Resource* currentBackBuffer() const;
+    D3D12_CPU_DESCRIPTOR_HANDLE currentBackBufferView() const;
 
   public:
     DxRender(void* window, uint32_t width, uint32_t height);

@@ -1,20 +1,25 @@
 #pragma once
 
-#include <d3d12.h>
+#include <windows.h>
+#include <wrl.h>
 #include <wrl/client.h>
-#include <string>
-#include <cstring>
+#include <dxgi1_4.h>
+#include <d3d12.h>
+#include <D3Dcompiler.h>
+#include <comdef.h>
 
 #include "d3dx12.h"
+
+#include <fstream>
+#include <system_error>
+#include <string>
+#include <cstring>
 
 namespace Engine {
 
 class DxUtils {
 public:
-
     static bool IsKeyDown(int vkeyCode);
-
-    static std::string ToString(HRESULT hr);
 
     static UINT CalcConstantBufferByteSize(UINT byteSize)
     {
@@ -31,8 +36,6 @@ public:
         // 512
         return (byteSize + 255) & ~255;
     }
-
-    static Microsoft::WRL::ComPtr<ID3DBlob> LoadBinary(const std::wstring& filename);
 
     static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(
         ID3D12Device* device,
@@ -60,13 +63,13 @@ class DxException
 {
 public:
     DxException() = default;
-    DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber);
+    DxException(HRESULT hr, const std::string& functionName, const std::string& filename, int lineNumber);
 
-    std::wstring ToString() const;
+    std::string ToString() const;
 
     HRESULT ErrorCode = S_OK;
-    std::wstring FunctionName;
-    std::wstring Filename;
+    std::string FunctionName;
+    std::string Filename;
     int LineNumber = -1;
 };
 
@@ -74,8 +77,7 @@ public:
 #define ThrowIfFailed(x)                                              \
 {                                                                     \
     HRESULT hr__ = (x);                                               \
-    std::wstring wfn = AnsiToWString(__FILE__);                       \
-    if(FAILED(hr__)) { throw DxException(hr__, L#x, wfn, __LINE__); } \
+    if(FAILED(hr__)) { throw DxException(hr__, #x, __FILE__, __LINE__); } \
 }
 #endif
 
