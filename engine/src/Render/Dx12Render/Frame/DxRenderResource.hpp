@@ -30,7 +30,7 @@ class DxRenderResource {
         // Has the GPU finished processing the commands of the current frame resource?
         // If not, wait until the GPU has completed commands up to this fence point.
         if (currFrameResource->fence != 0 && fence->GetCompletedValue() < currFrameResource->fence) {
-            HANDLE eventHandle = CreateEvent(nullptr, false, false, TEXT("WriteEvent"));
+            HANDLE eventHandle = CreateEventEx(nullptr, "FRAME", false, EVENT_ALL_ACCESS);
             ThrowIfFailed(fence->SetEventOnCompletion(currFrameResource->fence, eventHandle));
             WaitForSingleObject(eventHandle, INFINITE);
             CloseHandle(eventHandle);

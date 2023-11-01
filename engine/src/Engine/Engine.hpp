@@ -7,3 +7,7 @@
 #include "CameraController.hpp"
 #include "Input.hpp"
 #include "Math.hpp"
+
+#include "CrossPlatformRender.hpp"
+#include "Mesh.hpp"
+#include "Vertex.hpp"

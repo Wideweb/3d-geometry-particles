@@ -66,6 +66,10 @@ class CrossPlatformRender {
 public:
     virtual ~CrossPlatformRender() = default;
 
+    virtual void beginInitialization() = 0;
+
+    virtual void endInitialization() = 0;
+
     virtual void beginFrame() = 0;
 
     virtual void endFrame() = 0;

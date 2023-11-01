@@ -155,6 +155,14 @@ public:
 
     virtual ~DxPlatformRenderWrapper() = default;
 
+    void beginInitialization() override {
+        m_NativeRender->beginInitialization();
+    }
+
+    void endInitialization() override {
+        m_NativeRender->endInitialization();
+    }
+
     void beginFrame() override {
         m_NativeRender->beginFrame();
     }
@@ -177,8 +185,12 @@ public:
     }
 
     void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) override {
-        auto fbWrapper = std::static_pointer_cast<DxFramebufferWrapper>(fb);
-        m_NativeRender->setFramebuffer(fbWrapper->getNative());
+        if (fb == nullptr) {
+            m_NativeRender->setFramebuffer(nullptr);
+        } else {
+            auto fbWrapper = std::static_pointer_cast<DxFramebufferWrapper>(fb);
+            m_NativeRender->setFramebuffer(fbWrapper->getNative());
+        }
     }
 
     void registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) override {

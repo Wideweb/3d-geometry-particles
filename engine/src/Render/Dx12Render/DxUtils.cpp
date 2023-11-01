@@ -48,7 +48,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DxUtils::CreateDefaultBuffer(
 
     // In order to copy CPU memory data into our default buffer, we need to create
     // an intermediate upload heap. 
-    auto uploadBufferProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    auto uploadBufferProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
     auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSize);
 
     ThrowIfFailed(device->CreateCommittedResource(

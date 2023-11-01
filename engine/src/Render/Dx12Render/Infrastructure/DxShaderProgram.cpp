@@ -76,7 +76,7 @@ DxShaderProgram::DxShaderProgram(
         0,                                      // For single GPU operation, set this to zero
         serializedRootSig->GetBufferPointer(),  // A pointer to the source data for the serialized signature.
         serializedRootSig->GetBufferSize(),     // The size, in bytes, of the block of memory that pBlobWithRootSignature points to.
-        IID_PPV_ARGS(&m_RootSignature)            // The globally unique identifier (GUID) for the root signature interface. 
+        IID_PPV_ARGS(&m_RootSignature)          // The globally unique identifier (GUID) for the root signature interface. 
     ));
 
     m_InputLayout =

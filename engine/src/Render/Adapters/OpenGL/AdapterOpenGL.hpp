@@ -147,6 +147,14 @@ public:
 
     virtual ~OpenGLPlatformRenderWrapper() = default;
 
+    void beginInitialization() override {
+
+    }
+
+    void endInitialization() override {
+        
+    }
+
     void beginFrame() override {
         m_NativeRender->beginFrame();
     }

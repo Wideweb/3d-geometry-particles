@@ -75,6 +75,10 @@ class DxRender {
 
     virtual ~DxRender();
 
+    void beginInitialization();
+
+    void endInitialization();
+
     void beginFrame();
 
     void endFrame();

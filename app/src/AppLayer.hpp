@@ -4,9 +4,13 @@
 
 #include <glm/mat4x4.hpp>
 #include <vector>
+#include <memory>
 
 class AppLayer : public Engine::Layer {
   private:
+    std::shared_ptr<Engine::CrossPlatformShaderProgram> m_Shader;
+    std::shared_ptr<Engine::CrossPlatformRenderPass> m_RenderPass;
+
     // Engine::Shader m_Shader, m_SurfaceShader;
 
     // Engine::Texture m_SandTexture, m_SkyTexture;
@@ -24,6 +28,9 @@ class AppLayer : public Engine::Layer {
     // std::vector<GeometryParticle> m_Particles;
 
     float m_Time = 0.0f;
+
+    Engine::Mesh createCube(float left, float right, float bottom, float top, float back, float front);
+    Engine::Mesh createCube2();
 
   public:
     using Layer::Layer;

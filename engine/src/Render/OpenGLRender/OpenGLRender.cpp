@@ -8,6 +8,14 @@ OpenGLRender::OpenGLRender(void* window, uint32_t width, uint32_t height) : m_Wi
 
 OpenGLRender::~OpenGLRender() { }
 
+void OpenGLRender::beginInitialization() {
+
+}
+
+void OpenGLRender::endInitialization() {
+    
+}
+
 void OpenGLRender::beginFrame() {
     
 }

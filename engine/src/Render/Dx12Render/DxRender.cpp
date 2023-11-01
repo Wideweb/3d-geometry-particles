@@ -18,9 +18,9 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
     // Enable the D3D12 debug layer.
     #if defined(DEBUG) || defined(_DEBUG)
     {
-        ComPtr<ID3D12Debug> debugController;
-        ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
-        debugController->EnableDebugLayer();
+       ComPtr<ID3D12Debug> debugController;
+       ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
+       debugController->EnableDebugLayer();
     }
     #endif
 
@@ -29,7 +29,7 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
     // Try to create hardware device.
 	HRESULT hardwareResult = D3D12CreateDevice(
         nullptr,                  // NULL to use the default adapter
-        D3D_FEATURE_LEVEL_11_0,   // The minimum D3D_FEATURE_LEVEL
+        D3D_FEATURE_LEVEL_12_0,   // The minimum D3D_FEATURE_LEVEL
         IID_PPV_ARGS(&m_Device) // 
     );
 
@@ -40,14 +40,12 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
 
 		ThrowIfFailed(D3D12CreateDevice(
 			pWarpAdapter.Get(),
-			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_12_0,
 			IID_PPV_ARGS(&m_Device))
         );
 	}
 
     ThrowIfFailed(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
-
-    UINT64 f = m_Fence->GetCompletedValue();
 
     // Check 4X MSAA quality support for our back buffer format.
     // All Direct3D 11 capable devices support 4X MSAA for all render 
@@ -94,10 +92,6 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
 	m_CommandList->Close();
 
     //////////////////////// SWAP CHAIN ///////////////////////
-    
-    // Release the previous swapchain we will be recreating.
-    m_SwapChain.Reset();
-
     DXGI_SWAP_CHAIN_DESC sd;
     sd.BufferDesc.Width = m_Width;
     sd.BufferDesc.Height = m_Height;
@@ -142,20 +136,12 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
     m_CbvSrvUavDescPool = std::make_unique<DxDescriptorPool>(
         m_Device.Get(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-        D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
         1000
     );
 
     m_GeometryRegistry = std::make_unique<DxGeometryRegistry>(m_Device.Get());
     m_RenderResource = std::make_unique<DxRenderResource>(m_Device.Get());
-
-    m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
-        m_DepthStencilFormat,
-        m_Width, m_Height,
-        m_Device.Get(),
-        m_CbvSrvUavDescPool.get(),
-        m_DsvDescPool.get()
-    );
 
     resize(m_Width, m_Height);
 }
@@ -165,8 +151,21 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 	assert(m_SwapChain);
     assert(m_DirectCmdListAlloc);
 
+    m_Width = width;
+    m_Height = height;
+
 	// Flush before changing any resources.
 	flushCommandQueue();
+
+    for (size_t i = 0; i < c_SwapChainBufferCount; i++) {
+        if (m_SwapChainBuffers[i] != nullptr) {
+            m_SwapChainBuffers[i]->release();
+        }
+    }
+
+    if (m_DepthStencilBuffer != nullptr) {
+        m_DepthStencilBuffer->release();
+    }
 
     ThrowIfFailed(m_CommandList->Reset(m_DirectCmdListAlloc.Get(), nullptr));
 
@@ -196,7 +195,13 @@ void DxRender::resize(uint32_t width, uint32_t height) {
         );
 	}
 
-    m_DepthStencilBuffer->resize(width, height);
+    m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
+        m_DepthStencilFormat,
+        m_Width, m_Height,
+        m_Device.Get(),
+        m_CbvSrvUavDescPool.get(),
+        m_DsvDescPool.get()
+    );
     m_DepthStencilBuffer->beginRenderTo(m_CommandList.Get());
 
 	m_ScreenViewport.TopLeftX = 0;
@@ -226,19 +231,43 @@ DxRender::~DxRender() {
     }
 }
 
+void DxRender::beginInitialization() {
+    ThrowIfFailed(m_CommandList->Reset(m_DirectCmdListAlloc.Get(), nullptr));
+}
+
+void DxRender::endInitialization() {
+    ThrowIfFailed(m_CommandList->Close());
+    ID3D12CommandList* cmdsLists[] = { m_CommandList.Get() };
+    m_CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+    // Wait until initialization is complete.
+    flushCommandQueue();
+}
+
 void DxRender::beginFrame() {
     m_RenderResource->beginFrame(m_CurrFrameIndex, m_Fence.Get());
 
-	auto cmdListAlloc = m_RenderResource->currFrameResource->cmdListAlloc;
+	auto& cmdListAlloc = m_RenderResource->currFrameResource->cmdListAlloc;
 
     // Reuse the memory associated with command recording.
     // We can only reset when the associated command lists have finished execution on the GPU.
     ThrowIfFailed(cmdListAlloc->Reset());
 
+    // A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+    // Reusing the command list reuses memory.
+    ThrowIfFailed(m_CommandList->Reset(cmdListAlloc.Get(), m_RenderPass != nullptr ? m_RenderPass->resource() : nullptr));
+
+    m_CommandList->RSSetViewports(1, &m_ScreenViewport);
+    m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+
     // Indicate a state transition on the resource usage.
     auto toRTBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT,
                                                             D3D12_RESOURCE_STATE_RENDER_TARGET);
     m_CommandList->ResourceBarrier(1, &toRTBarrier);
+
+    auto rtDescriptor = currentBackBufferView();
+    auto dsDescriptor = m_DepthStencilBuffer->getDsvDescriptor().cpu;
+    m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = { m_CbvSrvUavDescPool->getHeap() };
     m_CommandList->SetDescriptorHeaps(1, descriptorHeaps);

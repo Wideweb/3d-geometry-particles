@@ -122,11 +122,9 @@ endif(UNIX)
 if (WIN32)
 
   target_link_libraries(${PROJECT_NAME} PRIVATE
-      d3d12.lib dxgi.lib dxguid.lib uuid.lib
-      dxgi.lib d3dcompiler.lib
-      kernel32.lib user32.lib
-      comdlg32.lib advapi32.lib shell32.lib
-      ole32.lib oleaut32.lib
+      d3d12.lib
+      dxgi.lib
+      d3dcompiler.lib
   )
 
   # include_directories(C:/Alckevich/vcpkg/installed/x64-windows/include)

@@ -52,17 +52,17 @@ DxDescriptor DxDescriptorPool::get()
 
 void DxDescriptorPool::release(CD3DX12_CPU_DESCRIPTOR_HANDLE handle)
 {
-    m_Free.push_back(handle.ptr / m_DescriptorSize);
+    m_Free.push_back((handle.ptr - m_Heap->GetCPUDescriptorHandleForHeapStart().ptr) / m_DescriptorSize);
 }
 
 void DxDescriptorPool::release(CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
 {
-    m_Free.push_back(handle.ptr / m_DescriptorSize);
+    m_Free.push_back((handle.ptr - m_Heap->GetGPUDescriptorHandleForHeapStart().ptr) / m_DescriptorSize);
 }
 
 void DxDescriptorPool::release(DxDescriptor handle)
 {
-    m_Free.push_back(handle.cpu.ptr / m_DescriptorSize);
+    release(handle.cpu);
 }
 
 } // namespace Engine

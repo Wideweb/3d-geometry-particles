@@ -32,6 +32,10 @@ class OpenGLRender {
 
     virtual ~OpenGLRender();
 
+    void beginInitialization();
+
+    void endInitialization();
+
     void beginFrame();
 
     void endFrame();

@@ -19,6 +19,8 @@ public:
 
     void bind(ID3D12GraphicsCommandList* commandList);
 
+    ID3D12PipelineState *resource() { return m_Pso.Get(); }
+
 private:
     std::shared_ptr<DxShaderProgram>               m_ShaderProgram;
     Microsoft::WRL::ComPtr<ID3D12PipelineState>    m_Pso;
