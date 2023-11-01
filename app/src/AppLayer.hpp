@@ -6,10 +6,20 @@
 #include <vector>
 #include <memory>
 
+struct RenderItemData {
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 projection;
+};
+
 class AppLayer : public Engine::Layer {
   private:
     std::shared_ptr<Engine::CrossPlatformShaderProgram> m_Shader;
     std::shared_ptr<Engine::CrossPlatformRenderPass> m_RenderPass;
+
+    glm::mat4 m_WorldTransform = glm::mat4(1.0f);
+
+    
 
     // Engine::Shader m_Shader, m_SurfaceShader;
 

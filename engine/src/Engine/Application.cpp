@@ -22,7 +22,7 @@ Application::Application(void* appInstance) {
     m_Render = std::unique_ptr<CrossPlatformRender>(
         CrossPlatformRender::create(m_Window->getNaviteWindow(), windowProps.width, windowProps.height));
 
-    m_Camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0, 0.0f, -1.0f));
+    m_Camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0, 0.0f, 0.0f));
     m_Camera->setSize(960, 540);
     m_Camera->setPerspective(glm::radians(45.0f), 0.1f, 50.0f);
     m_Camera->setProjection(Camera::Projection::PERSPECTIVE);

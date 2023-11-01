@@ -4,7 +4,9 @@ namespace Engine {
 
 DxShaderProgramSlot::DxShaderProgramSlot(ID3D12Device* device, size_t byteSize) {
     auto bufferProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSize);
+
+    size_t byteSizeAligned = DxUtils::CalcConstantBufferByteSize(byteSize);
+    auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSizeAligned);
 
     ThrowIfFailed(device->CreateCommittedResource(
         &bufferProperties,
@@ -29,7 +31,7 @@ DxShaderProgramSlot::~DxShaderProgramSlot() {
 }
 
 void DxShaderProgramSlot::copyData(void* data) {
-    memcpy(&m_MappedData, &data, m_ByteSize);
+    memcpy(m_MappedData, data, m_ByteSize);
 }
 
 } // namespace Engine

@@ -26,7 +26,7 @@ DxShaderProgram::DxShaderProgram(
     // Root signature is defined by an array of root parameters that describe the resources the shaders expect for a draw call
     // Root parameter can be a table, root descriptor or root constants.
     std::vector<CD3DX12_ROOT_PARAMETER> slotRootParameters;
-    slotRootParameters.reserve(dataSlots.size() + textureSlots);
+    slotRootParameters.resize(dataSlots.size() + textureSlots);
 
     for (size_t i = 0; i < dataSlots.size(); i++) {
         slotRootParameters[i].InitAsConstantBufferView(i);

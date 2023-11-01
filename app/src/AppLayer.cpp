@@ -1,8 +1,11 @@
 #include "AppLayer.hpp"
 
+#include "TBN.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <cmath>
 #include <unordered_map>
@@ -19,6 +22,8 @@ void AppLayer::onAttach() {
     render.registerGeometry("world", {"cube"}, {cube});
 
     std::vector<size_t> dataSlots;
+    dataSlots.push_back(sizeof(RenderItemData));
+
     std::vector<std::string> textureSlots;
     m_Shader = render.createShaderProgram("./../assets/shaders/dx/color.hlsl", "./../assets/shaders/dx/color.hlsl", dataSlots, textureSlots);
 
@@ -53,8 +58,8 @@ void AppLayer::onAttach() {
     // m_SurfaceModel = Engine::ModelFactory::createPlane(4, 10, 10);
     // m_SurfaceModel->setUp();
 
-    // camera.setPosition(glm::vec3(8.0f, 6.0f, 8.0f));
-    // camera.setRotation(glm::quat(glm::vec3(glm::radians(-25.0f), glm::radians(45.0f), 0.0f)));
+    camera.setPosition(glm::vec3(1.0f, 0.5f, 1.0f));
+    camera.setRotation(glm::quat(glm::vec3(glm::radians(-25.0f), glm::radians(45.0f), 0.0f)));
 
     // m_Geometry = std::make_shared<Geometry>(m_GeometryModel->meshes[0]);
 
@@ -127,9 +132,23 @@ void AppLayer::onDraw() {
     auto &app = Engine::Application::get();
     auto &camera = app.getCamera();
     auto &render = app.getRender();
+    auto &time = app.getTime();
+
+    m_WorldTransform = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+    m_WorldTransform = glm::rotate(glm::mat4(1.0f), (float)std::sin(time.getTotalSeconds()), glm::vec3(1.0f, 0.0f, 0.0f)) * m_WorldTransform;
+    // m_WorldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) * m_WorldTransform;
+    // m_WorldTransform = glm::transpose(m_WorldTransform);
+
+    RenderItemData itemData;
+    itemData.model = glm::transpose(m_WorldTransform);
+    itemData.view = glm::transpose(camera.viewMatrix());
+    itemData.projection = glm::transpose(camera.projectionMatrix());
+
+    render.setRenderPass(m_RenderPass);
+
+    m_Shader->setDataSlot(0, &itemData);
 
     // render.setFramebuffer(nullptr);
-    render.setRenderPass(m_RenderPass);
     render.drawItem("world", "cube");
     // m_SurfaceShader.bind();
     // m_SurfaceShader.setMatrix4("u_model", m_SurfaceTransform);
@@ -278,12 +297,10 @@ Engine::Mesh AppLayer::createCube(float left, float right, float bottom, float t
     vertices.emplace_back(positions[1], glm::vec3(0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.8f, 0.6f, 0.1f));
     // clang-format on
 
-    std::vector<unsigned int> indices;
-    for (size_t i = 0; i < vertices.size(); i++) {
-       indices.push_back(i);
-    }
+    std::vector<unsigned int> indices(vertices.size());
+    std::iota(indices.begin(), indices.end(), 0);
 
-    // Render3D::Utils::tbn(vertices);
+    TBN::calculate(vertices);
 
     Engine::Mesh mesh(vertices, indices);
     return mesh;
