@@ -2,6 +2,7 @@
 
 #include "DxUtils.hpp"
 #include "DxShaderProgramSlot.hpp"
+#include "DxTexture.hpp"
 #include "DxRenderTexture.hpp"
 
 #include <vector>
@@ -22,6 +23,7 @@ public:
 
     void setDataSlot(size_t index, void* data);
     void setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE srvDescriptor);
+    void setTextureSlot(size_t index, std::shared_ptr<DxTexture> renderTexture);
     void setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture);
 
     void bind(ID3D12GraphicsCommandList* commandList);

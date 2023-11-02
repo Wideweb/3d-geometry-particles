@@ -14,6 +14,11 @@ namespace Engine {
 enum class CROSS_PLATFROM_TEXTURE_FORMATS { RGBA8 };
 
 ////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// TEXTURE //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class CrossPlatformTexture { };
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// RENDER TEXTURE //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class CrossPlatformRenderTexture {
@@ -35,6 +40,7 @@ public:
 class CrossPlatformShaderProgram {
 public:
     virtual void setDataSlot(size_t index, void* data) = 0;
+    virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture) = 0;
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) = 0;
 };
 
@@ -83,6 +89,8 @@ public:
     virtual void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) = 0;
 
     virtual void registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) = 0;
+
+    virtual std::shared_ptr<CrossPlatformTexture> loadTexture(const std::string& filename) = 0;
 
     virtual std::shared_ptr<CrossPlatformDepthStencilTexture> createDepthStencilTexture(size_t width, size_t height) = 0;
 

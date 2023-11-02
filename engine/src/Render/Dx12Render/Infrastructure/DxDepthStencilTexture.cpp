@@ -42,6 +42,10 @@ DxDepthStencilTexture::DxDepthStencilTexture(
 }
 
 void DxDepthStencilTexture::resize(size_t width, size_t height) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
     if (width == m_Width && height == m_Height) {
         return;
     }

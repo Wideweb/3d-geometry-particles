@@ -44,6 +44,7 @@ DxShaderProgram::DxShaderProgram(
         );
 
         slotRootParameters[dataSlots.size()].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+        m_TxtureSlots.resize(textureSlots);
     }
 
     auto staticSamplers = getStaticSamplers();
@@ -102,6 +103,10 @@ void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxRenderTextu
     setTextureSlot(index, renderTexture->getSrvDescriptor().gpu);
 }
 
+void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxTexture> texture) {
+    setTextureSlot(index, texture->getSrvDescriptor().gpu);
+}
+
 void DxShaderProgram::bind(ID3D12GraphicsCommandList* commandList) {
     commandList->SetGraphicsRootSignature(m_RootSignature.Get());
 
@@ -110,7 +115,9 @@ void DxShaderProgram::bind(ID3D12GraphicsCommandList* commandList) {
     }
     
     for (size_t i = 0; i < m_TxtureSlots.size(); i++) {
-        commandList->SetGraphicsRootDescriptorTable(i, m_TxtureSlots[i]);
+        if (m_TxtureSlots[i].ptr != 0) {
+            commandList->SetGraphicsRootDescriptorTable(m_DataSlots.size() + i, m_TxtureSlots[i]);
+        }
     }
 }
 

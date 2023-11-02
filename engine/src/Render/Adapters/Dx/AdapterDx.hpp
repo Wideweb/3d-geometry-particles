@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CrossPlatformRender.hpp"
+#include "DxTexture.hpp"
 #include "DxRenderTexture.hpp"
 #include "DxDepthStencilTexture.hpp"
 #include "DxShaderProgram.hpp"
@@ -23,6 +24,21 @@ DXGI_FORMAT getDxTextureFormat(CROSS_PLATFROM_TEXTURE_FORMATS format) {
 }
 
 // GL_DEPTH_STENCIL
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// TEXTURE //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class DxTextureWrapper : public CrossPlatformTexture {
+public:
+    DxTextureWrapper(std::shared_ptr<DxTexture> nativeTexture) {
+        m_NativeTexture = nativeTexture;
+    }
+
+    std::shared_ptr<DxTexture> getNative() { return m_NativeTexture; }
+
+private:
+    std::shared_ptr<DxTexture> m_NativeTexture;
+};
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// RENDER TEXTURE //////////////////////////////
@@ -73,6 +89,11 @@ public:
 
     void setDataSlot(size_t index, void* data) override {
         m_NativeSP->setDataSlot(index, data);
+    }
+
+    void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture) override {
+        auto textureWrapper = std::static_pointer_cast<DxTextureWrapper>(texture);
+        m_NativeSP->setTextureSlot(index, textureWrapper->getNative());
     }
 
     void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) override {
@@ -195,6 +216,11 @@ public:
 
     void registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) override {
         m_NativeRender->registerGeometry(geometry, subGeometries, subMeshes);
+    }
+
+    std::shared_ptr<CrossPlatformTexture> loadTexture(const std::string& filename) override {
+        auto nativeTexture = m_NativeRender->loadTexture(filename);
+        return std::make_shared<DxTextureWrapper>(nativeTexture);
     }
 
     std::shared_ptr<CrossPlatformDepthStencilTexture> createDepthStencilTexture(size_t width, size_t height) override {

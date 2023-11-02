@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "DxUtils.hpp"
+#include "DxTextureLoader.hpp"
 
 namespace Engine {
 
@@ -29,7 +30,7 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
     // Try to create hardware device.
 	HRESULT hardwareResult = D3D12CreateDevice(
         nullptr,                  // NULL to use the default adapter
-        D3D_FEATURE_LEVEL_12_0,   // The minimum D3D_FEATURE_LEVEL
+        D3D_FEATURE_LEVEL_11_0,   // The minimum D3D_FEATURE_LEVEL
         IID_PPV_ARGS(&m_Device) // 
     );
 
@@ -40,7 +41,7 @@ DxRender::DxRender(void *window, uint32_t width, uint32_t height) : m_Window((HW
 
 		ThrowIfFailed(D3D12CreateDevice(
 			pWarpAdapter.Get(),
-			D3D_FEATURE_LEVEL_12_0,
+			D3D_FEATURE_LEVEL_11_0,
 			IID_PPV_ARGS(&m_Device))
         );
 	}
@@ -348,6 +349,14 @@ std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(DXGI_FORMAT forma
 std::shared_ptr<DxDepthStencilTexture> DxRender::createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height) {
     auto dst = std::make_shared<DxDepthStencilTexture>(format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
     return dst;
+}
+
+std::shared_ptr<DxTexture> DxRender::loadTexture(const std::string& filename) {
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap = nullptr;
+    DxTextureLoader::loadImageDataFromFile(m_Device.Get(), m_CommandList.Get(), filename, resource, uploadHeap);
+    auto texture = std::make_shared<DxTexture>(resource, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get());
+    return texture;
 }
 
 void DxRender::setRenderPass(std::shared_ptr<DxRenderPass> pass) {

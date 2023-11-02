@@ -177,13 +177,30 @@ LRESULT WinWindow::msgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         m_mouseEventCallback(m_MouseEvent);
         return 0;
 	}
+    case WM_MOUSEWHEEL:
+    {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+        m_MouseEvent = MouseEvent(0, delta, EventType::MouseWheel);
+        m_mouseEventCallback(m_MouseEvent);
+        return 0;
+    }
+    case WM_MOUSEHWHEEL: {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+        m_MouseEvent = MouseEvent(delta, 0, EventType::MouseWheel);
+        m_mouseEventCallback(m_MouseEvent);
+        return 0;
+    }
     case WM_KEYUP:
+    {
         if (wParam == VK_ESCAPE) {
             PostQuitMessage(0);
         }
 
         return 0;
 	}
+    }
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }

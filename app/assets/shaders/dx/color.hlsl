@@ -5,6 +5,15 @@ cbuffer cbPerObject : register(b0)
     float4x4 projection;
 };
 
+Texture2D diffuseMap : register(t0);
+
+SamplerState gsamPointWrap        : register(s0);
+SamplerState gsamPointClamp       : register(s1);
+SamplerState gsamLinearWrap       : register(s2);
+SamplerState gsamLinearClamp      : register(s3);
+SamplerState gsamAnisotropicWrap  : register(s4);
+SamplerState gsamAnisotropicClamp : register(s5);
+
 struct VertexIn
 {
 	float3 PosL      : POSITION;
@@ -17,11 +26,12 @@ struct VertexIn
 
 struct VertexOut
 {
-    float4 PosW    : POSITION0;
-    float4 PosV    : POSITION1;
-    float4 PosH    : SV_POSITION;
-    float3 NormalW : NORMAL;
-    float4 Color   : COLOR;
+    float4 PosW     : POSITION0;
+    float4 PosV     : POSITION1;
+    float4 PosH     : SV_POSITION;
+    float3 NormalW  : NORMAL;
+    float4 Color    : COLOR;
+    float2 TexCoord : TEXCOORD;
 };
 
 VertexOut VS(VertexIn vin)
@@ -33,12 +43,14 @@ VertexOut VS(VertexIn vin)
     vout.PosH = mul(vout.PosV, projection);
     vout.NormalW = mul(vin.NormalL, (float3x3) model);
     vout.Color = vin.Color;
+    vout.TexCoord = vin.TexCoord;
 	
     return vout;
 }
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return float4(normalize(pin.NormalW), 1.0);
+    return diffuseMap.Sample(gsamAnisotropicWrap, pin.TexCoord);
+    // return float4(normalize(pin.NormalW), 1.0);
     // return pin.Color;
 }

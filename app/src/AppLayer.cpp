@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <unordered_map>
+#include <algorithm>
 
 void AppLayer::onAttach() {
     auto& app = Engine::Application::get();
@@ -16,6 +17,8 @@ void AppLayer::onAttach() {
     auto& render = app.getRender();
 
     render.beginInitialization();
+
+    m_Texture = render.loadTexture("./../assets/box-2.png");
 
     Engine::Mesh cube = createCube(0.1, 0.1, 0.1, 0.1, 0.1, 0.1);
     // Engine::Mesh cube = createCube2();
@@ -25,6 +28,7 @@ void AppLayer::onAttach() {
     dataSlots.push_back(sizeof(RenderItemData));
 
     std::vector<std::string> textureSlots;
+    textureSlots.push_back("sand");
     m_Shader = render.createShaderProgram("./../assets/shaders/dx/color.hlsl", "./../assets/shaders/dx/color.hlsl", dataSlots, textureSlots);
 
     m_RenderPass = render.createRenderPass(m_Shader);
@@ -147,6 +151,7 @@ void AppLayer::onDraw() {
     render.setRenderPass(m_RenderPass);
 
     m_Shader->setDataSlot(0, &itemData);
+    m_Shader->setTextureSlot(0, m_Texture);
 
     // render.setFramebuffer(nullptr);
     render.drawItem("world", "cube");
@@ -173,21 +178,23 @@ void AppLayer::onMouseEvent(Engine::MouseEvent &event) {
     auto& app = Engine::Application::get();
 
     if (!event.handled && event.type == Engine::EventType::MouseWheel) {
-        auto mousePos = app.getInput().GetMousePosition();
         auto &camera = app.getCamera();
         auto cameraRotation = camera.rotationQuat();
 
-        float eventXSign = event.x > 0.0f ? 1.0f : -1.0f;
-        float eventYSign = event.y > 0.0f ? 1.0f : -1.0f;
+        float deltaX = event.x / 20;
+        float deltaY = event.y / 20;
 
-        glm::vec2 mouseOffset =
-            glm::vec2(-1.0f * eventXSign * std::pow(event.x, 2), eventYSign * std::pow(event.y, 2)) * 0.015f;
+        float eventXSign = deltaX > 0.0f ? 1.0f : -1.0f;
+        float eventYSign = deltaY > 0.0f ? 1.0f : -1.0f;
 
-        auto deltaRotationX =
-            glm::angleAxis(mouseOffset.y, glm::normalize(glm::cross(camera.frontVec(), camera.upVec())));
+        glm::vec2 mouseOffset = glm::vec2(-1.0f * eventXSign * std::abs(deltaX), eventYSign * std::abs(deltaY)) * 0.015f;
+
+        auto deltaRotationX = glm::angleAxis(mouseOffset.y, glm::normalize(glm::cross(camera.frontVec(), camera.upVec())));
         auto deltaRotationY = glm::angleAxis(mouseOffset.x, camera.upVec());
 
        app.getCameraController().rotateTo(deltaRotationX * deltaRotationY * cameraRotation, 0.1);
+
+       m_MousePos = glm::vec2(event.x, event.y);
     }
 }
 

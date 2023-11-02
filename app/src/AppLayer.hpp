@@ -17,9 +17,11 @@ class AppLayer : public Engine::Layer {
     std::shared_ptr<Engine::CrossPlatformShaderProgram> m_Shader;
     std::shared_ptr<Engine::CrossPlatformRenderPass> m_RenderPass;
 
+    std::shared_ptr<Engine::CrossPlatformTexture> m_Texture;
+
     glm::mat4 m_WorldTransform = glm::mat4(1.0f);
 
-    
+    glm::vec2 m_MousePos;
 
     // Engine::Shader m_Shader, m_SurfaceShader;
 

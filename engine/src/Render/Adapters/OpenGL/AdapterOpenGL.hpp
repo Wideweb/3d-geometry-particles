@@ -21,6 +21,21 @@ unsigned int getOpenGLTextureFormat(CROSS_PLATFROM_TEXTURE_FORMATS format) {
 }
 
 ////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// TEXTURE //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class OpenGLTextureWrapper : public CrossPlatformTexture {
+public:
+    OpenGLTextureWrapper(std::shared_ptr<OpenGLTexture> nativeTexture) {
+        m_NativeTexture = nativeTexture;
+    }
+
+    std::shared_ptr<OpenGLTexture> getNative() { return m_NativeTexture; }
+
+private:
+    std::shared_ptr<OpenGLTexture> m_NativeTexture;
+};
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// RENDER TEXTURE //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLRenderTextureWrapper : public CrossPlatformRenderTexture {
@@ -183,6 +198,11 @@ public:
 
     void registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) override {
         m_NativeRender->registerGeometry(geometry, subGeometries, subMeshes);
+    }
+
+    std::shared_ptr<CrossPlatformTexture> loadTexture(const std::string& filename) override {
+        auto nativeTexture = m_NativeRender->loadTexture(filename);
+        return std::make_shared<OpenGLTextureWrapper>(nativeTexture);
     }
 
     std::shared_ptr<CrossPlatformDepthStencilTexture> createDepthStencilTexture(size_t width, size_t height) override {
