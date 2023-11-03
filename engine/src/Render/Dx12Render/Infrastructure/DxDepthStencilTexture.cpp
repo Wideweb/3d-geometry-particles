@@ -125,6 +125,10 @@ void DxDepthStencilTexture::release() {
 }
 
 void DxDepthStencilTexture::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
+    if (m_State == afterState) {
+        return;
+    }
+
     auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState);
 	commandList->ResourceBarrier(1, &barrier);
     m_State = afterState;

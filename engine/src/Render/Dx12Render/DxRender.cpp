@@ -352,7 +352,7 @@ std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(DXGI_FORMAT forma
 }
 
 std::shared_ptr<DxDepthStencilTexture> DxRender::createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height) {
-    auto dst = std::make_shared<DxDepthStencilTexture>(format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get());
+    auto dst = std::make_shared<DxDepthStencilTexture>(format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_DsvDescPool.get());
     return dst;
 }
 
@@ -375,12 +375,17 @@ void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
     }
 
     if (fb == nullptr) {
-        // Specify the buffers we are going to render to.
-        auto rtDescriptor = currentBackBufferView();
-        auto dsDescriptor = m_DepthStencilBuffer->getDsvDescriptor().cpu;
-        m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
+
+        if (m_Framebuffer != nullptr) {
+            // Specify the buffers we are going to render to.
+            auto rtDescriptor = currentBackBufferView();
+            auto dsDescriptor = m_DepthStencilBuffer->getDsvDescriptor().cpu;
+            m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
+        }
+        
+
     } else {
-        m_Framebuffer->beginRenderTo(m_CommandList.Get());
+        fb->beginRenderTo(m_CommandList.Get());
     }
 
     m_Framebuffer = fb;

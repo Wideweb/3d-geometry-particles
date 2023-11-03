@@ -81,15 +81,24 @@ void DxRenderTexture::resize(size_t width, size_t height) {
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-    D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(m_Format,
-        static_cast<UINT64>(width),
-        static_cast<UINT>(height),
-        1, 1, 1, 0, m_Flags);
+    D3D12_RESOURCE_DESC desc;
+    ZeroMemory(&desc, sizeof(D3D12_RESOURCE_DESC));
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Alignment = 0;
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.Format = m_Format;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
     D3D12_CLEAR_VALUE clearValue = { m_Format, {} };
     memcpy(clearValue.Color, m_ClearColor, sizeof(clearValue.Color));
 
-    m_State = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    m_State = D3D12_RESOURCE_STATE_COMMON;
 
     // Create a render target
     ThrowIfFailed(
@@ -132,6 +141,10 @@ void DxRenderTexture::release() {
 }
 
 void DxRenderTexture::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
+    if (m_State == afterState) {
+        return;
+    }
+
     auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState);
     commandList->ResourceBarrier(1, &barrier);
     m_State = afterState;

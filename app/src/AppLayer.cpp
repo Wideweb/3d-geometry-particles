@@ -47,6 +47,16 @@ void AppLayer::onAttach() {
     m_CommonRenderData = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
     m_GeometryRenderData = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
 
+    uint32_t width;
+    uint32_t height;
+    render.getViewport(width, height);
+    m_RenderTexture = render.createRenderTexture(Engine::CROSS_PLATFROM_TEXTURE_FORMATS::RGBA8, width, height);
+    m_DSTexture = render.createDepthStencilTexture(width, height);
+
+    m_Framebuffer = render.createFramebuffer();
+    m_Framebuffer->addAttachment(m_RenderTexture);
+    m_Framebuffer->setDSAttachment(m_DSTexture);
+
     // app.getRender().setClearColor(glm::vec4(1.0f));
 
     // auto vertexSrc = Engine::File::read("./assets/shaders/vertex.glsl");
@@ -158,23 +168,10 @@ void AppLayer::onDraw() {
     // m_WorldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) * m_WorldTransform;
     // m_WorldTransform = glm::transpose(m_WorldTransform);
 
-    render.setRenderPass(m_RenderPassTexture);
-
     RenderCommonData commonData;
     commonData.view = glm::transpose(camera.viewMatrix());
     commonData.projection = glm::transpose(camera.projectionMatrix());
     m_CommonRenderData->copyData(&commonData);
-    
-    m_ShaderTexture->setDataSlot(0, m_CommonRenderData);
-
-    RenderItemDataTexturePass itemData;
-    itemData.model = glm::transpose(m_WorldTransform);
-    m_GeometryRenderData->copyData(&itemData);
-
-    m_ShaderTexture->setDataSlot(1, m_GeometryRenderData);
-    m_ShaderTexture->setTextureSlot(2, m_Texture);
-
-    render.drawItem("world", "monkey");
 
     // m_WorldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) * m_WorldTransform;
     // itemData.model = glm::transpose(m_WorldTransform);
@@ -193,7 +190,9 @@ void AppLayer::onDraw() {
     // m_Shader.setFloat4("u_color", glm::vec4(0.25f, 0.75f, 0.1f, 1.0f));
     // m_GeometryModel->draw();
 
+    render.setFramebuffer(m_Framebuffer);
     render.setRenderPass(m_RenderPassColor);
+    render.clear(0, 0, 0, 0);
 
     m_ShaderColor->setDataSlot(0, m_CommonRenderData);
     for (size_t i = 0; i < m_Particles.size(); i++) {
@@ -204,6 +203,20 @@ void AppLayer::onDraw() {
         m_ShaderColor->setDataSlot(1, m_ParticlesRenderData[i]);
         render.drawItem("world", "bug");
     }
+
+    render.setFramebuffer(nullptr);
+    render.setRenderPass(m_RenderPassTexture);
+
+    m_ShaderTexture->setDataSlot(0, m_CommonRenderData);
+
+    RenderItemDataTexturePass itemData;
+    itemData.model = glm::transpose(m_WorldTransform);
+    m_GeometryRenderData->copyData(&itemData);
+
+    m_ShaderTexture->setDataSlot(1, m_GeometryRenderData);
+    m_ShaderTexture->setTextureSlot(2, m_RenderTexture);
+
+    render.drawItem("world", "monkey");
 }
 
 void AppLayer::onDetach() { }

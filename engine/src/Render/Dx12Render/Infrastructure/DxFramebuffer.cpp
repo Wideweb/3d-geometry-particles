@@ -32,6 +32,10 @@ void DxFramebuffer::resize(size_t width, size_t height) {
 }
 
 void DxFramebuffer::beginRenderTo(ID3D12GraphicsCommandList* commandList) {
+    if (m_RenderTo) {
+        return;
+    }
+
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDescriptors;
     for (auto& rt: m_Attachments) {
         rt->beginRenderTo(commandList);
@@ -47,6 +51,10 @@ void DxFramebuffer::beginRenderTo(ID3D12GraphicsCommandList* commandList) {
 }
 
 void DxFramebuffer::endRenderTo(ID3D12GraphicsCommandList* commandList) {
+    if (!m_RenderTo) {
+        return;
+    }
+
     for (auto& rt: m_Attachments) {
         rt->endRenderTo(commandList);
     }

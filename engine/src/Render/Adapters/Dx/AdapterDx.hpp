@@ -292,6 +292,10 @@ public:
         m_NativeRender->drawItem(geometry, subGeometry);
     }
 
+    void getViewport(uint32_t& width, uint32_t& height) override {
+        m_NativeRender->getViewport(width, height);
+    }
+
     void release() override {
         m_NativeRender->flushCommandQueue();
     }

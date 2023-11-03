@@ -111,6 +111,11 @@ class DxRender {
     std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat);
 
     void drawItem(const std::string& geometry, const std::string& subGeometry);
+
+    void getViewport(uint32_t& width, uint32_t& height) {
+      width = m_Width;
+      height = m_Height;
+    }
 };
 
 } // namespace Engine

@@ -33,6 +33,10 @@ class AppLayer : public Engine::Layer {
 
     std::shared_ptr<Engine::CrossPlatformTexture> m_Texture;
 
+    std::shared_ptr<Engine::CrossPlatformRenderTexture> m_RenderTexture;
+    std::shared_ptr<Engine::CrossPlatformDepthStencilTexture> m_DSTexture;
+    std::shared_ptr<Engine::CrossPlatformFramebuffer> m_Framebuffer;
+
     glm::mat4 m_WorldTransform = glm::mat4(1.0f);
 
     glm::vec2 m_MousePos;

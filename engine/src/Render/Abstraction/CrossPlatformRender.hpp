@@ -117,6 +117,8 @@ public:
     
     virtual void drawItem(const std::string& geometry, const std::string& subGeometry) = 0;
 
+    virtual void getViewport(uint32_t& width, uint32_t& height) = 0;
+
     virtual void release() = 0;
 
     static CrossPlatformRender* create(void* window, uint32_t width, uint32_t height);
