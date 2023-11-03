@@ -20,7 +20,6 @@ struct TriangleTransition {
 
 class GeometryParticle {
   private:
-    Engine::Shader m_Shader;
     Geometry& m_Geometry;
 
     glm::vec3 m_Position;

@@ -2,12 +2,13 @@
 
 #include "DxDescriptorPool.hpp"
 #include "DxUtils.hpp"
+#include "DxResource.hpp"
 
 #include <string>
 
 namespace Engine {
 
-class DxTexture {
+class DxTexture : public DxResource {
   public:
     DxTexture(Microsoft::WRL::ComPtr<ID3D12Resource> resource, Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap,
               ID3D12Device *device, DxDescriptorPool *srvDescPool) {

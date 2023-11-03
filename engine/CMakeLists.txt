@@ -19,6 +19,7 @@ set(SOURCE_LIB
     src/IO/Input.cpp
     src/Render/Abstraction/Camera.cpp
     src/Render/Abstraction/CrossPlatformRender.cpp
+    src/Render/Abstraction/ModelLoader.cpp
     src/Engine/Application.cpp
     src/Engine/Layer.cpp
     src/Engine/CameraController.cpp
@@ -64,7 +65,7 @@ if (WIN32)
       src/Render/Dx12Render/Infrastructure/DxRenderPass.cpp
       src/Render/Dx12Render/Infrastructure/DxRenderTexture.cpp
       src/Render/Dx12Render/Infrastructure/DxShaderProgram.cpp
-      src/Render/Dx12Render/Infrastructure/DxShaderProgramSlot.cpp
+      src/Render/Dx12Render/Infrastructure/DxShaderProgramDataBuffer.cpp
   )
 
   list(APPEND INCLUDE_DIRS

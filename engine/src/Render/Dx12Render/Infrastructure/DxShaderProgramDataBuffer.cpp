@@ -1,8 +1,8 @@
-#include "DxShaderProgramSlot.hpp"
+#include "DxShaderProgramDataBuffer.hpp"
 
 namespace Engine {
 
-DxShaderProgramSlot::DxShaderProgramSlot(ID3D12Device* device, size_t byteSize) {
+DxShaderProgramDataBuffer::DxShaderProgramDataBuffer(ID3D12Device* device, size_t byteSize) {
     auto bufferProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
     size_t byteSizeAligned = DxUtils::CalcConstantBufferByteSize(byteSize);
@@ -22,15 +22,16 @@ DxShaderProgramSlot::DxShaderProgramSlot(ID3D12Device* device, size_t byteSize) 
     m_ByteSize = byteSize;
 }
 
-DxShaderProgramSlot::~DxShaderProgramSlot() {
+DxShaderProgramDataBuffer::~DxShaderProgramDataBuffer() {
     if (m_Buffer != nullptr) {
         m_Buffer->Unmap(0, nullptr);
     }
 
+    m_Buffer = nullptr;
     m_MappedData = nullptr;
 }
 
-void DxShaderProgramSlot::copyData(void* data) {
+void DxShaderProgramDataBuffer::copyData(void* data) {
     memcpy(m_MappedData, data, m_ByteSize);
 }
 

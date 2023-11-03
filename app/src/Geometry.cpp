@@ -1,6 +1,6 @@
 #include "Geometry.hpp"
 
-Geometry::Geometry(Engine::Mesh& mesh) : mesh(mesh) {
+Geometry::Geometry(const Engine::Mesh& mesh) : mesh(mesh) {
   int triangles = mesh.vertices.size() / 3;
   for (int i = 0; i < triangles; i++) {
     glm::vec3 P0 = mesh.vertices[i * 3].position;

@@ -336,9 +336,14 @@ std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShade
     return pass;
 }
 
-std::shared_ptr<DxShaderProgram> DxRender::createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, size_t textureSlots) {
-    auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), vertexFile, pixelFile, dataSlots, textureSlots);
+std::shared_ptr<DxShaderProgram> DxRender::createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots) {
+    auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), vertexFile, pixelFile, slots);
     return shader;
+}
+
+std::shared_ptr<DxShaderProgramDataBuffer> DxRender::createShaderProgramDataBuffer(size_t byteSize) {
+    auto buffer = std::make_shared<DxShaderProgramDataBuffer>(m_Device.Get(), byteSize);
+    return buffer;
 }
 
 std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height) {

@@ -87,6 +87,7 @@ void Application::onWindowEvent(WindowEvent &e) {
 
     if (e.type == EventType::WindowClosed) {
         stop();
+        m_Render->release();
     }
 }
 

@@ -7,8 +7,9 @@ cbuffer cbCommon : register(b0)
 cbuffer cbObject : register(b1)
 {
 	float4x4 model;
-    float4 color;
 };
+
+Texture2D diffuseMap : register(t0);
 
 SamplerState gsamPointWrap        : register(s0);
 SamplerState gsamPointClamp       : register(s1);
@@ -45,7 +46,7 @@ VertexOut VS(VertexIn vin)
     vout.PosV = mul(vout.PosW, view);
     vout.PosH = mul(vout.PosV, projection);
     vout.NormalW = mul(vin.NormalL, (float3x3) model);
-    vout.Color = color;
+    vout.Color = vin.Color;
     vout.TexCoord = vin.TexCoord;
 	
     return vout;
@@ -53,5 +54,7 @@ VertexOut VS(VertexIn vin)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return pin.Color;
+    return diffuseMap.Sample(gsamAnisotropicWrap, pin.TexCoord);
+    // return float4(normalize(pin.NormalW), 1.0);
+    // return pin.Color;
 }

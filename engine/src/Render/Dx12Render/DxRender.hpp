@@ -9,6 +9,7 @@
 #include "DxRenderTexture.hpp"
 #include "DxFramebuffer.hpp"
 #include "DxShaderProgram.hpp"
+#include "DxShaderProgramDataBuffer.hpp"
 #include "DxRenderPass.hpp"
 
 #define NOMINMAX
@@ -101,7 +102,9 @@ class DxRender {
 
     std::shared_ptr<DxRenderTexture> createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height);
 
-    std::shared_ptr<DxShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, size_t textureSlots);
+    std::shared_ptr<DxShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots);
+
+    std::shared_ptr<DxShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize);
 
     std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram);
 

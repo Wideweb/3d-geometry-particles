@@ -5,6 +5,7 @@
 #include "DxRenderTexture.hpp"
 #include "DxDepthStencilTexture.hpp"
 #include "DxShaderProgram.hpp"
+#include "DxShaderProgramDataBuffer.hpp"
 #include "DxRenderPass.hpp"
 #include "DxFramebuffer.hpp"
 #include "DxRender.hpp"
@@ -79,6 +80,25 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////
+/////////////////////// SHADER PROGRAM DATA BUFFER /////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class DxShaderProgramDataBufferWrapper : public CrossPlatformShaderProgramDataBuffer {
+public:
+    DxShaderProgramDataBufferWrapper(std::shared_ptr<DxShaderProgramDataBuffer> nativeBuffer) {
+        m_NativeBuffer = nativeBuffer;
+    }
+
+    void copyData(void* data) override {
+        m_NativeBuffer->copyData(data);
+    }
+
+    std::shared_ptr<DxShaderProgramDataBuffer> getNative() { return m_NativeBuffer; }
+
+private:
+    std::shared_ptr<DxShaderProgramDataBuffer> m_NativeBuffer;
+};
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// SHADER PROGRAM //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class DxShaderProgramWrapper : public CrossPlatformShaderProgram {
@@ -87,8 +107,9 @@ public:
         m_NativeSP = nativeSP;
     }
 
-    void setDataSlot(size_t index, void* data) override {
-        m_NativeSP->setDataSlot(index, data);
+    void setDataSlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer) override {
+        auto bufferWrapper = std::static_pointer_cast<DxShaderProgramDataBufferWrapper>(buffer);
+        m_NativeSP->setDataSlot(index, bufferWrapper->getNative());
     }
 
     void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture) override {
@@ -233,9 +254,14 @@ public:
         return std::make_shared<DxRenderTextureWrapper>(nativeRT);
     }
 
-    std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) override {
-        auto nativeShaderProgram = m_NativeRender->createShaderProgram(vertexFile, pixelFile, dataSlots, textureSlots.size());
+    std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots) override {
+        auto nativeShaderProgram = m_NativeRender->createShaderProgram(vertexFile, pixelFile, slots);
         return std::make_shared<DxShaderProgramWrapper>(nativeShaderProgram);
+    }
+
+    std::shared_ptr<CrossPlatformShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize) override {
+        auto nativeBuffer = m_NativeRender->createShaderProgramDataBuffer(byteSize);
+        return std::make_shared<DxShaderProgramDataBufferWrapper>(nativeBuffer);
     }
 
     std::shared_ptr<CrossPlatformFramebuffer> createFramebuffer() override {
@@ -264,6 +290,10 @@ public:
     
     void drawItem(const std::string& geometry, const std::string& subGeometry) override {
         m_NativeRender->drawItem(geometry, subGeometry);
+    }
+
+    void release() override {
+        m_NativeRender->flushCommandQueue();
     }
 
 private:

@@ -20,20 +20,32 @@ void AppLayer::onAttach() {
 
     m_Texture = render.loadTexture("./../assets/box-2.png");
 
-    Engine::Mesh cube = createCube(0.1, 0.1, 0.1, 0.1, 0.1, 0.1);
-    // Engine::Mesh cube = createCube2();
-    render.registerGeometry("world", {"cube"}, {cube});
+    Engine::Mesh bug = Engine::ModelLoader::loadObj("./../assets/models/bug.obj");
+    Engine::Mesh monkey = Engine::ModelLoader::loadObj("./../assets/models/monkey.obj");
 
-    std::vector<size_t> dataSlots;
-    dataSlots.push_back(sizeof(RenderItemData));
+    render.registerGeometry("world", {"monkey", "bug"}, {monkey, bug});
 
-    std::vector<std::string> textureSlots;
-    textureSlots.push_back("sand");
-    m_Shader = render.createShaderProgram("./../assets/shaders/dx/color.hlsl", "./../assets/shaders/dx/color.hlsl", dataSlots, textureSlots);
+    std::vector<Engine::ShaderProgramSlotDesc> slotsTexturePass =
+    {
+        { "cbCommon",    Engine::SHADER_PROGRAM_SLOT_TYPE::DATA },
+        { "cbObject",    Engine::SHADER_PROGRAM_SLOT_TYPE::DATA },
+        { "diffuseMap",  Engine::SHADER_PROGRAM_SLOT_TYPE::TEXTURE },
+    };
 
-    m_RenderPass = render.createRenderPass(m_Shader);
+    m_ShaderTexture = render.createShaderProgram("./../assets/shaders/dx/texture.hlsl", "./../assets/shaders/dx/texture.hlsl", slotsTexturePass);
+    m_RenderPassTexture = render.createRenderPass(m_ShaderTexture);
 
-    render.endInitialization();
+    std::vector<Engine::ShaderProgramSlotDesc> slotsColorPass =
+    {
+        { "cbCommon",    Engine::SHADER_PROGRAM_SLOT_TYPE::DATA },
+        { "cbObject",    Engine::SHADER_PROGRAM_SLOT_TYPE::DATA },
+    };
+
+    m_ShaderColor = render.createShaderProgram("./../assets/shaders/dx/color.hlsl", "./../assets/shaders/dx/color.hlsl", slotsColorPass);
+    m_RenderPassColor = render.createRenderPass(m_ShaderColor);
+
+    m_CommonRenderData = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
+    m_GeometryRenderData = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
 
     // app.getRender().setClearColor(glm::vec4(1.0f));
 
@@ -50,7 +62,7 @@ void AppLayer::onAttach() {
 
     // m_ParticleModel = Engine::ModelLoader::loadObj("./assets/models/bug.obj");
     // m_ParticleModel->setUp();
-    // m_ParticleTransform = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f, 0.01f, 0.01f));
+    m_ParticleTransform = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f, 0.01f, 0.01f));
 
     // m_SkyTexture = Engine::TextureLoader::loadTexture("./assets/sky-3.jpeg");
     // m_SandTexture = Engine::TextureLoader::loadTexture("./assets/sand-2.png");
@@ -65,12 +77,15 @@ void AppLayer::onAttach() {
     camera.setPosition(glm::vec3(1.0f, 0.5f, 1.0f));
     camera.setRotation(glm::quat(glm::vec3(glm::radians(-25.0f), glm::radians(45.0f), 0.0f)));
 
-    // m_Geometry = std::make_shared<Geometry>(m_GeometryModel->meshes[0]);
+    m_Geometry = std::make_shared<Geometry>(monkey);
+    m_Particles.reserve(100);
+    for (size_t i = 0; i < 100; i++) {
+        m_Particles.emplace_back(*m_Geometry);
+        m_Particles[i].setUp();
+        m_ParticlesRenderData.push_back(render.createShaderProgramDataBuffer(sizeof(RenderItemDataColorPass)));
+    }
 
-    // for (size_t i = 0; i < 500; i++) {
-    //     m_Particles.emplace_back(*m_Geometry);
-    //     m_Particles[m_Particles.size() - 1].setUp();
-    // }
+    render.endInitialization();
  }
 
 void AppLayer::onUpdate() { 
@@ -110,9 +125,9 @@ void AppLayer::onUpdate() {
         cameraController.move(delta, 0.1);
     }
 
-    // for (auto& particle : m_Particles) {
-    //     particle.update();
-    // }
+    for (auto& particle : m_Particles) {
+        particle.update();
+    }
 
     // m_Shader.bind();
     // m_Shader.setMatrix4("u_view", camera.viewMatrix());
@@ -139,22 +154,35 @@ void AppLayer::onDraw() {
     auto &time = app.getTime();
 
     m_WorldTransform = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-    m_WorldTransform = glm::rotate(glm::mat4(1.0f), (float)std::sin(time.getTotalSeconds()), glm::vec3(1.0f, 0.0f, 0.0f)) * m_WorldTransform;
+    // m_WorldTransform = glm::rotate(glm::mat4(1.0f), (float)std::sin(time.getTotalSeconds()), glm::vec3(1.0f, 0.0f, 0.0f)) * m_WorldTransform;
     // m_WorldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) * m_WorldTransform;
     // m_WorldTransform = glm::transpose(m_WorldTransform);
 
-    RenderItemData itemData;
+    render.setRenderPass(m_RenderPassTexture);
+
+    RenderCommonData commonData;
+    commonData.view = glm::transpose(camera.viewMatrix());
+    commonData.projection = glm::transpose(camera.projectionMatrix());
+    m_CommonRenderData->copyData(&commonData);
+    
+    m_ShaderTexture->setDataSlot(0, m_CommonRenderData);
+
+    RenderItemDataTexturePass itemData;
     itemData.model = glm::transpose(m_WorldTransform);
-    itemData.view = glm::transpose(camera.viewMatrix());
-    itemData.projection = glm::transpose(camera.projectionMatrix());
+    m_GeometryRenderData->copyData(&itemData);
 
-    render.setRenderPass(m_RenderPass);
+    m_ShaderTexture->setDataSlot(1, m_GeometryRenderData);
+    m_ShaderTexture->setTextureSlot(2, m_Texture);
 
-    m_Shader->setDataSlot(0, &itemData);
-    m_Shader->setTextureSlot(0, m_Texture);
+    render.drawItem("world", "monkey");
 
-    // render.setFramebuffer(nullptr);
-    render.drawItem("world", "cube");
+    // m_WorldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) * m_WorldTransform;
+    // itemData.model = glm::transpose(m_WorldTransform);
+    // m_GeometryRenderData2->copyData(&itemData);
+    // m_Shader->setDataSlot(1, m_GeometryRenderData2);
+    // render.drawItem("world", "cube");
+
+
     // m_SurfaceShader.bind();
     // m_SurfaceShader.setMatrix4("u_model", m_SurfaceTransform);
     // m_SurfaceShader.setFloat4("u_color", glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
@@ -165,11 +193,17 @@ void AppLayer::onDraw() {
     // m_Shader.setFloat4("u_color", glm::vec4(0.25f, 0.75f, 0.1f, 1.0f));
     // m_GeometryModel->draw();
 
-    // for (auto& particle : m_Particles) {
-    //     m_Shader.setMatrix4("u_model", m_GeometryTransform * particle.getTransform() * m_ParticleTransform);
-    //     m_Shader.setFloat4("u_color", particle.color);
-    //     m_ParticleModel->draw();
-    // }
+    render.setRenderPass(m_RenderPassColor);
+
+    m_ShaderColor->setDataSlot(0, m_CommonRenderData);
+    for (size_t i = 0; i < m_Particles.size(); i++) {
+        RenderItemDataColorPass itemData;
+        itemData.model = glm::transpose(m_WorldTransform * m_Particles[i].getTransform() * m_ParticleTransform);
+        itemData.color = glm::vec4(0.25f, 0.75f, 0.1f, 1.0f);
+        m_ParticlesRenderData[i]->copyData(&itemData);
+        m_ShaderColor->setDataSlot(1, m_ParticlesRenderData[i]);
+        render.drawItem("world", "bug");
+    }
 }
 
 void AppLayer::onDetach() { }

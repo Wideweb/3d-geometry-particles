@@ -1,17 +1,18 @@
 #pragma once
 
 #include "DxUtils.hpp"
+#include "DxResource.hpp"
 
 namespace Engine {
 
-class DxShaderProgramSlot {
+class DxShaderProgramDataBuffer : public DxResource {
 public:
-    DxShaderProgramSlot(ID3D12Device* device, size_t byteSize);
+    DxShaderProgramDataBuffer(ID3D12Device* device, size_t byteSize);
 
-    DxShaderProgramSlot(const DxShaderProgramSlot& rhs) = delete;
-    DxShaderProgramSlot& operator=(const DxShaderProgramSlot& rhs) = delete;
+    DxShaderProgramDataBuffer(const DxShaderProgramDataBuffer& rhs) = delete;
+    DxShaderProgramDataBuffer& operator=(const DxShaderProgramDataBuffer& rhs) = delete;
 
-    ~DxShaderProgramSlot();
+    ~DxShaderProgramDataBuffer();
 
     void copyData(void* data);
 

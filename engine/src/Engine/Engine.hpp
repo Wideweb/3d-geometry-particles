@@ -11,3 +11,4 @@
 #include "CrossPlatformRender.hpp"
 #include "Mesh.hpp"
 #include "Vertex.hpp"
+#include "ModelLoader.hpp"

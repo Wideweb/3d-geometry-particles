@@ -1,9 +1,11 @@
 #pragma once
 
 #include "DxUtils.hpp"
-#include "DxShaderProgramSlot.hpp"
+#include "DxShaderProgramDataBuffer.hpp"
 #include "DxTexture.hpp"
 #include "DxRenderTexture.hpp"
+
+#include "ShaderProgramSlot.hpp"
 
 #include <vector>
 #include <memory>
@@ -18,11 +20,9 @@ public:
         ID3D12Device* device,
         const std::string& vertexFile,
         const std::string& pixelFile,
-        const std::vector<size_t>& dataSlots,
-        size_t textureSlots);
+        const std::vector<ShaderProgramSlotDesc>& slots);
 
-    void setDataSlot(size_t index, void* data);
-    void setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE srvDescriptor);
+    void setDataSlot(size_t index, std::shared_ptr<DxShaderProgramDataBuffer> buffer);
     void setTextureSlot(size_t index, std::shared_ptr<DxTexture> renderTexture);
     void setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture);
 
@@ -40,11 +40,13 @@ private:
     ID3D12Device*                                     m_Device;
     Microsoft::WRL::ComPtr<ID3D12RootSignature>       m_RootSignature;
     std::vector<D3D12_INPUT_ELEMENT_DESC>             m_InputLayout;
-    std::vector<std::unique_ptr<DxShaderProgramSlot>> m_DataSlots;
-    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>          m_TxtureSlots;
+    std::vector<ShaderProgramSlotDesc>                m_Slots;
 
     Microsoft::WRL::ComPtr<ID3DBlob>                  m_VertexShader;
     Microsoft::WRL::ComPtr<ID3DBlob>                  m_PixelShader;
+
+    ID3D12GraphicsCommandList*                        m_CommandList;
+    std::vector<std::shared_ptr<DxResource>>          m_Resources;           
 };
 
 } // namespace Engine

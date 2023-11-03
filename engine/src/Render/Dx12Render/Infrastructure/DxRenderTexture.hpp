@@ -2,10 +2,11 @@
 
 #include "DxUtils.hpp"
 #include "DxDescriptorPool.hpp"
+#include "DxResource.hpp"
 
 namespace Engine {
 
-class DxRenderTexture {
+class DxRenderTexture : public DxResource {
 public:
     DxRenderTexture(
         Microsoft::WRL::ComPtr<ID3D12Resource> resource,

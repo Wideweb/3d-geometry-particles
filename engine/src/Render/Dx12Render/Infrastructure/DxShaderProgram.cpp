@@ -8,12 +8,14 @@ DxShaderProgram::DxShaderProgram(
     ID3D12Device* device,
     const std::string& vertexFile,
     const std::string& pixelFile,
-    const std::vector<size_t>& dataSlots,
-    size_t textureSlots) {   
+    const std::vector<ShaderProgramSlotDesc>& slots) {   
     m_Device = device;
 
     m_VertexShader = DxUtils::CompileShader(vertexFile, nullptr, "VS", "vs_5_1");
     m_PixelShader = DxUtils::CompileShader(pixelFile, nullptr, "PS", "ps_5_1");
+
+    m_Slots = slots;
+    m_Resources.resize(slots.size());
 
     //////////////////// Root Signature ////////////////////
 
@@ -26,25 +28,27 @@ DxShaderProgram::DxShaderProgram(
     // Root signature is defined by an array of root parameters that describe the resources the shaders expect for a draw call
     // Root parameter can be a table, root descriptor or root constants.
     std::vector<CD3DX12_ROOT_PARAMETER> slotRootParameters;
-    slotRootParameters.resize(dataSlots.size() + textureSlots);
+    slotRootParameters.resize(slots.size());
 
-    for (size_t i = 0; i < dataSlots.size(); i++) {
+    for (size_t i = 0; i < slots.size(); i++) {
         slotRootParameters[i].InitAsConstantBufferView(i);
-        m_DataSlots.push_back(std::make_unique<DxShaderProgramSlot>(m_Device, dataSlots[i]));
-    }
 
-    if (textureSlots > 0) {
-        CD3DX12_DESCRIPTOR_RANGE texTable;
-        texTable.Init(
-            D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-            textureSlots, // Number of descriptors in table
-            0,            // base shader register arguments are bound to for this root parameter
-            0,            // register space
-            D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND   // offset from start of table
-        );
+        auto slot = slots[i];
+        
+        if (slot.type == SHADER_PROGRAM_SLOT_TYPE::DATA) {
+            slotRootParameters[i].InitAsConstantBufferView(i);
+        } else if (slot.type == SHADER_PROGRAM_SLOT_TYPE::TEXTURE) {
+            CD3DX12_DESCRIPTOR_RANGE texTable;
+            texTable.Init(
+                D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+                1,            // Number of descriptors in table
+                0,            // base shader register arguments are bound to for this root parameter
+                0,            // register space
+                D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND   // offset from start of table
+            );
 
-        slotRootParameters[dataSlots.size()].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
-        m_TxtureSlots.resize(textureSlots);
+            slotRootParameters[i].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+        }
     }
 
     auto staticSamplers = getStaticSamplers();
@@ -91,34 +95,24 @@ DxShaderProgram::DxShaderProgram(
     };
 }
 
-void DxShaderProgram::setDataSlot(size_t index, void* data) {
-    m_DataSlots[index]->copyData(data);
-}
-
-void DxShaderProgram::setTextureSlot(size_t index, D3D12_GPU_DESCRIPTOR_HANDLE srvDescriptor) {
-    m_TxtureSlots[index] = srvDescriptor;
+void DxShaderProgram::setDataSlot(size_t index, std::shared_ptr<DxShaderProgramDataBuffer> buffer) {
+    m_Resources[index] = std::static_pointer_cast<DxResource>(buffer);
+    m_CommandList->SetGraphicsRootConstantBufferView(index, buffer->resource()->GetGPUVirtualAddress());
 }
 
 void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture) {
-    setTextureSlot(index, renderTexture->getSrvDescriptor().gpu);
+    m_Resources[index] = std::static_pointer_cast<DxResource>(renderTexture);
+    m_CommandList->SetGraphicsRootDescriptorTable(index, renderTexture->getSrvDescriptor().gpu);
 }
 
 void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxTexture> texture) {
-    setTextureSlot(index, texture->getSrvDescriptor().gpu);
+    m_Resources[index] = std::static_pointer_cast<DxResource>(texture);
+    m_CommandList->SetGraphicsRootDescriptorTable(index, texture->getSrvDescriptor().gpu);
 }
 
 void DxShaderProgram::bind(ID3D12GraphicsCommandList* commandList) {
+    m_CommandList = commandList;
     commandList->SetGraphicsRootSignature(m_RootSignature.Get());
-
-    for (size_t i = 0; i < m_DataSlots.size(); i++) {
-        commandList->SetGraphicsRootConstantBufferView(i, m_DataSlots[i]->resource()->GetGPUVirtualAddress());
-    }
-    
-    for (size_t i = 0; i < m_TxtureSlots.size(); i++) {
-        if (m_TxtureSlots[i].ptr != 0) {
-            commandList->SetGraphicsRootDescriptorTable(m_DataSlots.size() + i, m_TxtureSlots[i]);
-        }
-    }
 }
 
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> DxShaderProgram::getStaticSamplers() {

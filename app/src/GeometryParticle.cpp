@@ -164,8 +164,8 @@ TriangleTransition GeometryParticle::findNextTriangle() {
 
 TriangleTransition GeometryParticle::findNextTriangleByVertices() {
   int nextTriangleIndex = -1;
-  glm::vec3 wayPoint;
-  glm::vec3 nextWayPoint;
+  glm::vec3 wayPoint = glm::vec3(0.0f);
+  glm::vec3 nextWayPoint = glm::vec3(0.0f);
 
   float d0 = glm::dot(m_Velocity, glm::normalize(m_P0 - m_Position));
   float d1 = glm::dot(m_Velocity, glm::normalize(m_P1 - m_Position));

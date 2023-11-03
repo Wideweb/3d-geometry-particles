@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Mesh.hpp"
+#include "ShaderProgramSlot.hpp"
 
 namespace Engine {
 
@@ -35,11 +36,19 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////
+/////////////////////// SHADER PROGRAM DATA BUFFER /////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class CrossPlatformShaderProgramDataBuffer {
+public:
+    virtual void copyData(void* data) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// SHADER PROGRAM //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class CrossPlatformShaderProgram {
 public:
-    virtual void setDataSlot(size_t index, void* data) = 0;
+    virtual void setDataSlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer) = 0;
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture) = 0;
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) = 0;
 };
@@ -96,7 +105,9 @@ public:
 
     virtual std::shared_ptr<CrossPlatformRenderTexture> createRenderTexture(CROSS_PLATFROM_TEXTURE_FORMATS format, size_t width, size_t height) = 0;
 
-    virtual std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots, const std::vector<std::string>& textureSlots) = 0;
+    virtual std::shared_ptr<CrossPlatformShaderProgram> createShaderProgram(const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots) = 0;
+
+    virtual std::shared_ptr<CrossPlatformShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize) = 0;
 
     virtual std::shared_ptr<CrossPlatformFramebuffer> createFramebuffer() = 0;
 
@@ -105,6 +116,8 @@ public:
     virtual std::shared_ptr<CrossPlatformRenderPass> createRenderPass(std::shared_ptr<CrossPlatformShaderProgram> shaderProgram, std::vector<CROSS_PLATFROM_TEXTURE_FORMATS> rtvFormats) = 0;
     
     virtual void drawItem(const std::string& geometry, const std::string& subGeometry) = 0;
+
+    virtual void release() = 0;
 
     static CrossPlatformRender* create(void* window, uint32_t width, uint32_t height);
 };
