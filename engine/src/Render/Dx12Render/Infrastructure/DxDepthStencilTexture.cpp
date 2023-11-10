@@ -95,17 +95,26 @@ void DxDepthStencilTexture::resize(size_t width, size_t height) {
 
     // SetDebugObjectName(m_resource.Get(), L"DxDepthStencilTexture RT");
 
+    // Create DSV.
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Format = m_Format;
 	dsvDesc.Texture2D.MipSlice = 0;
 
-    // Create DSV.
     m_Device->CreateDepthStencilView(m_Resource.Get(), &dsvDesc, m_DsvDescriptor.cpu);
 
     // Create SRV.
-    // m_Device->CreateShaderResourceView(m_Resource.Get(), nullptr, m_SrvDescriptor.cpu);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS; 
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+    srvDesc.Texture2D.PlaneSlice = 0;
+
+    m_Device->CreateShaderResourceView(m_Resource.Get(), &srvDesc, m_SrvDescriptor.cpu);
 
     m_Width = width;
     m_Height = height;

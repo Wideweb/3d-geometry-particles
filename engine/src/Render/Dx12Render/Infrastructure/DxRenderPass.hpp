@@ -4,17 +4,24 @@
 #include "DxShaderProgram.hpp"
 
 #include <memory>
-#include <array>
+#include <vector>
 
 namespace Engine {
 
 class DxRenderPass {
 public:
+    struct PipelineDesc {
+        D3D12_CULL_MODE cullMode = D3D12_CULL_MODE_BACK;
+        D3D12_COMPARISON_FUNC depthFunc = D3D12_COMPARISON_FUNC_LESS;
+        bool depthClipEnable = true;
+    };
+
     DxRenderPass(
         ID3D12Device* device,
         std::shared_ptr<DxShaderProgram> shaderProgram,
         std::vector<DXGI_FORMAT> rtvFormats,
-        DXGI_FORMAT dsvFormat
+        DXGI_FORMAT dsvFormat,
+        PipelineDesc pipelineDesc
     );
 
     void bind(ID3D12GraphicsCommandList* commandList);

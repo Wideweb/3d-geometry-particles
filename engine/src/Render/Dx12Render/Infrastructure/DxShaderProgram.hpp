@@ -4,6 +4,7 @@
 #include "DxShaderProgramDataBuffer.hpp"
 #include "DxTexture.hpp"
 #include "DxRenderTexture.hpp"
+#include "DxDepthStencilTexture.hpp"
 
 #include "ShaderProgramSlot.hpp"
 
@@ -25,6 +26,7 @@ public:
     void setDataSlot(size_t index, std::shared_ptr<DxShaderProgramDataBuffer> buffer);
     void setTextureSlot(size_t index, std::shared_ptr<DxTexture> renderTexture);
     void setTextureSlot(size_t index, std::shared_ptr<DxRenderTexture> renderTexture);
+    void setTextureSlot(size_t index, std::shared_ptr<DxDepthStencilTexture> renderTexture);
 
     void bind(ID3D12GraphicsCommandList* commandList);
 
@@ -34,7 +36,7 @@ public:
     ID3D12RootSignature* getRootSignature() const noexcept { return m_RootSignature.Get(); }
     const std::vector<D3D12_INPUT_ELEMENT_DESC>& getInputLayout() const noexcept { return m_InputLayout; }
 
-    std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> getStaticSamplers();
+    std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> getStaticSamplers();
 
 private:
     ID3D12Device*                                     m_Device;

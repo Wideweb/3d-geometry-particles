@@ -26,6 +26,7 @@ class Camera {
     glm::vec3 rightVec() const;
     glm::quat rotationQuat() const;
     glm::vec2 size() const;
+    glm::mat4 worldMatrix() const;
 
     void setSize(int width, int height);
     void setPerspective(float fieldOfView, float zNear, float zFar);
@@ -42,6 +43,10 @@ class Camera {
     float getZNear() { return zNear; }
     float getZFar() const { return zFar; }
     float getZoom() { return zoom; }
+    void getSize(int& width, int& height) {
+      width = this->width;
+      height = this->height;
+    }
 
   private:
     int width;

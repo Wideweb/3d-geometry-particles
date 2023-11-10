@@ -13,18 +13,60 @@
 namespace Engine {
 
 ////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// CULL FUNC /////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+D3D12_CULL_MODE getDxCullMode(CULL_MODE mode) {
+    switch (mode) {
+    case CULL_MODE::NONE:
+        return D3D12_CULL_MODE_NONE;
+    case CULL_MODE::BACK:
+        return D3D12_CULL_MODE_BACK;
+    case CULL_MODE::FRONT:
+        return D3D12_CULL_MODE_FRONT;
+    default:
+        throw std::invalid_argument("getDxCullMode: invalid cull mode.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// DEPTH FUNC ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+D3D12_COMPARISON_FUNC getDxDepthFunc(DEPTH_FUNC func) {
+    switch (func) {
+    case DEPTH_FUNC::NEVER:
+        return D3D12_COMPARISON_FUNC_NEVER;
+    case DEPTH_FUNC::LESS:
+        return D3D12_COMPARISON_FUNC_LESS;
+    case DEPTH_FUNC::EQUAL:
+        return D3D12_COMPARISON_FUNC_EQUAL;
+    case DEPTH_FUNC::LESS_EQUAL:
+        return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    case DEPTH_FUNC::GREATER:
+        return D3D12_COMPARISON_FUNC_GREATER;
+    case DEPTH_FUNC::NOT_EQUAL:
+        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+    case DEPTH_FUNC::GREATER_EQUAL:
+        return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+    case DEPTH_FUNC::ALWAYS:
+        return D3D12_COMPARISON_FUNC_ALWAYS;
+    default:
+        throw std::invalid_argument("getDxDepthFunc: invalid depth func.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// TEXTURE FORMAT //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 DXGI_FORMAT getDxTextureFormat(CROSS_PLATFROM_TEXTURE_FORMATS format) {
     switch (format) {
     case CROSS_PLATFROM_TEXTURE_FORMATS::RGBA8:
         return DXGI_FORMAT_R8G8B8A8_UNORM;
+    case CROSS_PLATFROM_TEXTURE_FORMATS::D24S8:
+        return DXGI_FORMAT_D24_UNORM_S8_UINT;
     default:
-        throw std::invalid_argument("GfxImage::getDxTextureFormat: invalid internal format.");
+        throw std::invalid_argument("getDxTextureFormat: invalid internal format.");
     }
 }
-
-// GL_DEPTH_STENCIL
 
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// TEXTURE //////////////////////////////////
@@ -119,6 +161,11 @@ public:
 
     void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) override {
         auto textureWrapper = std::static_pointer_cast<DxRenderTextureWrapper>(texture);
+        m_NativeSP->setTextureSlot(index, textureWrapper->getNative());
+    }
+
+    void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformDepthStencilTexture> texture) override {
+        auto textureWrapper = std::static_pointer_cast<DxDepthStencilTextureWrapper>(texture);
         m_NativeSP->setTextureSlot(index, textureWrapper->getNative());
     }
 
@@ -244,6 +291,11 @@ public:
         return std::make_shared<DxTextureWrapper>(nativeTexture);
     }
 
+    std::shared_ptr<CrossPlatformTexture> loadCubeTexture(const std::array<std::string, 6> &files) override {
+        auto nativeTexture = m_NativeRender->loadCubeTexture(files);
+        return std::make_shared<DxTextureWrapper>(nativeTexture);
+    }
+
     std::shared_ptr<CrossPlatformDepthStencilTexture> createDepthStencilTexture(size_t width, size_t height) override {
         auto nativeDSTexture = m_NativeRender->createDepthStencilTexture(DXGI_FORMAT_D24_UNORM_S8_UINT, width, height);
         return std::make_shared<DxDepthStencilTextureWrapper>(nativeDSTexture);
@@ -269,13 +321,19 @@ public:
         return std::make_shared<DxFramebufferWrapper>(nativeFB);
     }
 
-    std::shared_ptr<CrossPlatformRenderPass> createRenderPass(std::shared_ptr<CrossPlatformShaderProgram> shaderProgram) override {
+    std::shared_ptr<CrossPlatformRenderPass> createRenderPass(std::shared_ptr<CrossPlatformShaderProgram> shaderProgram, CrossPlatformRenderPass::PipelineDesc pipelineDesc) override {
         auto shaderProgramWrapper = std::static_pointer_cast<DxShaderProgramWrapper>(shaderProgram);
-        auto nativeRenderPass = m_NativeRender->createRenderPass(shaderProgramWrapper->getNative());
+        
+        DxRenderPass::PipelineDesc nativePipelineDesc;
+        nativePipelineDesc.cullMode = getDxCullMode(pipelineDesc.cullMode);
+        nativePipelineDesc.depthFunc = getDxDepthFunc(pipelineDesc.depthFunc);
+        nativePipelineDesc.depthClipEnable = pipelineDesc.depthClipEnable;
+
+        auto nativeRenderPass = m_NativeRender->createRenderPass(shaderProgramWrapper->getNative(), nativePipelineDesc);
         return std::make_shared<DxRenderPassWrapper>(nativeRenderPass);
     }
 
-    std::shared_ptr<CrossPlatformRenderPass> createRenderPass(std::shared_ptr<CrossPlatformShaderProgram> shaderProgram, std::vector<CROSS_PLATFROM_TEXTURE_FORMATS> rtvFormats) override {
+    std::shared_ptr<CrossPlatformRenderPass> createRenderPass(std::shared_ptr<CrossPlatformShaderProgram> shaderProgram, std::vector<CROSS_PLATFROM_TEXTURE_FORMATS> rtvFormats, CROSS_PLATFROM_TEXTURE_FORMATS dsvFormat, CrossPlatformRenderPass::PipelineDesc pipelineDesc) override {
         auto shaderProgramWrapper = std::static_pointer_cast<DxShaderProgramWrapper>(shaderProgram);
         
         std::vector<DXGI_FORMAT> nativeRtvFormats;
@@ -283,8 +341,15 @@ public:
         for (CROSS_PLATFROM_TEXTURE_FORMATS format : rtvFormats) {
             nativeRtvFormats.push_back(getDxTextureFormat(format));
         }
+
+        DXGI_FORMAT nativeDsvFormat = getDxTextureFormat(dsvFormat);
+
+        DxRenderPass::PipelineDesc nativePipelineDesc;
+        nativePipelineDesc.cullMode = getDxCullMode(pipelineDesc.cullMode);
+        nativePipelineDesc.depthFunc = getDxDepthFunc(pipelineDesc.depthFunc);
+        nativePipelineDesc.depthClipEnable = pipelineDesc.depthClipEnable;
         
-        auto nativeRenderPass = m_NativeRender->createRenderPass(shaderProgramWrapper->getNative(), nativeRtvFormats, DXGI_FORMAT_D24_UNORM_S8_UINT);
+        auto nativeRenderPass = m_NativeRender->createRenderPass(shaderProgramWrapper->getNative(), nativeRtvFormats, nativeDsvFormat, nativePipelineDesc);
         return std::make_shared<DxRenderPassWrapper>(nativeRenderPass);
     }
     

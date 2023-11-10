@@ -89,4 +89,10 @@ glm::vec3 Camera::rightVec() const { return glm::normalize(glm::cross(front, up)
 
 glm::quat Camera::rotationQuat() const { return this->rotation; }
 
+glm::mat4 Camera::worldMatrix() const {
+    glm::mat4 model = glm::toMat4(rotation);
+    model = glm::translate(glm::mat4(1.0f), position) * model;
+    return model;
+}
+
 } // namespace Engine

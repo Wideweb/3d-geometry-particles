@@ -98,6 +98,8 @@ class DxRender {
 
     std::shared_ptr<DxTexture> loadTexture(const std::string& filename);
 
+    std::shared_ptr<DxTexture> loadCubeTexture(const std::array<std::string, 6> &files);
+
     std::shared_ptr<DxDepthStencilTexture> createDepthStencilTexture(DXGI_FORMAT format, size_t width, size_t height);
 
     std::shared_ptr<DxRenderTexture> createRenderTexture(DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height);
@@ -106,9 +108,9 @@ class DxRender {
 
     std::shared_ptr<DxShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize);
 
-    std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram);
+    std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, DxRenderPass::PipelineDesc desc);
 
-    std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat);
+    std::shared_ptr<DxRenderPass> createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat, DxRenderPass::PipelineDesc desc);
 
     void drawItem(const std::string& geometry, const std::string& subGeometry);
 

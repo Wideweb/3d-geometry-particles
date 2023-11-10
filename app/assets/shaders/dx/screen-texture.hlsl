@@ -1,15 +1,4 @@
-#include "light-lib.hlsl"
-
-cbuffer cbCommon : register(b0)
-{
-    float4x4 view;
-    float4x4 projection;
-    float3 viewPos;
-    float4 ambientLight;
-    Light light;
-};
-
-cbuffer cbObject : register(b1)
+cbuffer cbObject : register(b0)
 {
 	float4x4 model;
 };
@@ -35,11 +24,7 @@ struct VertexIn
 
 struct VertexOut
 {
-    float4 PosW     : POSITION0;
-    float4 PosV     : POSITION1;
     float4 PosH     : SV_POSITION;
-    float3 NormalW  : NORMAL;
-    float4 Color    : COLOR;
     float2 TexCoord : TEXCOORD;
 };
 
@@ -47,11 +32,7 @@ VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 
-    vout.PosW = mul(float4(vin.PosL, 1.0), model);
-    vout.PosV = mul(vout.PosW, view);
-    vout.PosH = mul(vout.PosV, projection);
-    vout.NormalW = mul(vin.NormalL, (float3x3) model);
-    vout.Color = vin.Color;
+    vout.PosH = mul(model, float4(vin.PosL, 1.0));
     vout.TexCoord = vin.TexCoord;
 	
     return vout;
@@ -59,7 +40,5 @@ VertexOut VS(VertexIn vin)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return diffuseMap.Sample(gsamAnisotropicWrap, pin.TexCoord);
-    // return float4(normalize(pin.NormalW), 1.0);
-    // return pin.Color;
+    return float4(diffuseMap.Sample(gsamLinearWrap, pin.TexCoord).rrr, 1.0);
 }

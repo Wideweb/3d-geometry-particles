@@ -2,6 +2,8 @@
 
 #include "DxUtils.hpp"
 
+#include <array>
+#include <string>
 #include <wincodec.h>
 
 namespace Engine {
@@ -15,6 +17,11 @@ class DxTextureLoader {
                                       const std::string &filename,
                                       Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
                                       Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap);
+
+    static void loadCubeMapDataFromFile(ID3D12Device *device, ID3D12GraphicsCommandList *commandList,
+                                        const std::array<std::string, 6> &files,
+                                        Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
+                                        Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap);
 
   private:
     static int loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC &resourceDescription, LPCWSTR filename,

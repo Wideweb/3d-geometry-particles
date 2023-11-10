@@ -65,10 +65,97 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(ID3D
     return textureResource;
 }
 
+void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12GraphicsCommandList *commandList,
+                                              const std::array<std::string, 6> &files,
+                                              Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
+                                              Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap) {
+    HRESULT hr;
+
+    D3D12_RESOURCE_DESC textureDesc;
+
+    std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+    for (int i = 0; i < 6; i++) {
+        BYTE *imageData;
+        int imageBytesPerRow;
+        int imageSize = DxTextureLoader::loadImageDataFromFile(
+            &imageData, textureDesc, DxUtils::AnsiToWString(files[i]).c_str(), imageBytesPerRow);
+        // make sure we have data
+        if (imageSize <= 0) {
+            std::cout << "Image has no size -ERROR:" << std::endl;
+            return;
+        }
+
+        // store texture buffer in upload heap
+        D3D12_SUBRESOURCE_DATA textureData = {};
+        textureData.pData = &imageData[0];                              // pointer to our image data
+        textureData.RowPitch = imageBytesPerRow;                        // size of all our triangle vertex data
+        textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; // also the size of our triangle vertex data
+
+        subresources.push_back(textureData);
+    }
+
+    textureResource.Reset();
+
+    // create a default heap where the upload heap will copy its contents into (contents being the texture)
+    CD3DX12_HEAP_PROPERTIES textureHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+    textureDesc.DepthOrArraySize = 6;
+
+    hr = device->CreateCommittedResource(
+        &textureHeapProperties, // a default heap
+        D3D12_HEAP_FLAG_NONE,   // no flags
+        &textureDesc,           // the description of our texture
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
+        nullptr, // used for render targets and depth/stencil buffers
+        IID_PPV_ARGS(textureResource.GetAddressOf()));
+    if (FAILED(hr)) {
+        std::cout << "Error create default heap in LoadTexture -ERROR:" + std::to_string(hr) << std::endl;
+        return;
+    }
+    textureResource->SetName(L"Texture Buffer Resource Heap");
+
+    UINT64 textureUploadBufferSize;
+    // this function gets the size an upload buffer needs to be to upload a texture to the gpu.
+    // each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
+    // eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width *
+    // numBytesPerPixel);
+    // textureUploadBufferSize = (((imageBytesPerRow + 255) & ~255) * (textureDesc.Height - 1)) + imageBytesPerRow;
+    device->GetCopyableFootprints(&textureDesc, 0, 6, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
+
+    // now we create an upload heap to upload our texture to the GPU
+    textureUploadHeap.Reset();
+
+    CD3DX12_HEAP_PROPERTIES textureUploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
+    CD3DX12_RESOURCE_DESC textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
+
+    hr = device->CreateCommittedResource(
+        &textureUploadHeapProperties, // upload heap
+        D3D12_HEAP_FLAG_NONE,         // no flags
+        &textureUploadDesc,
+        // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
+        D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
+        nullptr, IID_PPV_ARGS(textureUploadHeap.GetAddressOf()));
+    if (FAILED(hr)) {
+        std::cout << "Error create upload heap in LoadTexture -ERROR:" << std::to_string(hr) << std::endl;
+        return;
+    }
+    textureUploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
+
+    // Now we copy the upload buffer contents to the default heap
+    UpdateSubresources(commandList, textureResource.Get(), textureUploadHeap.Get(), 0, 0, 6, subresources.data());
+
+    // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel
+    // shader to get the color of pixels)
+    CD3DX12_RESOURCE_BARRIER textureBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+    commandList->ResourceBarrier(1, &textureBarrier);
+}
+
 void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12GraphicsCommandList *commandList,
-                                           const std::string &filename,
-                                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
-                                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap) {
+                                            const std::string &filename,
+                                            Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
+                                            Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap) {
     HRESULT hr;
     // Load the image from file
     BYTE *imageData;
@@ -89,8 +176,8 @@ void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12Graphics
 
     hr = device->CreateCommittedResource(
         &textureHeapProperties, // a default heap
-        D3D12_HEAP_FLAG_NONE,                              // no flags
-        &textureDesc,                                      // the description of our texture
+        D3D12_HEAP_FLAG_NONE,   // no flags
+        &textureDesc,           // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST,
         // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
         nullptr, // used for render targets and depth/stencil buffers

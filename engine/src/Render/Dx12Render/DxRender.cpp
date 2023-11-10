@@ -301,6 +301,8 @@ void DxRender::endFrame() {
 
     // Cycle through the circular frame resource array.
     m_CurrFrameIndex = (m_CurrFrameIndex + 1) % 3;
+
+    this->flushCommandQueue();
 }
 
 void DxRender::flushCommandQueue() {
@@ -311,6 +313,8 @@ void DxRender::flushCommandQueue() {
 	// are on the GPU timeline, the new fence point won't be set until the GPU finishes
 	// processing all the commands prior to this Signal().
     ThrowIfFailed(m_CommandQueue->Signal(m_Fence.Get(), m_CurrentFence));
+
+    auto f = m_Fence->GetCompletedValue();
 
 	// Wait until the GPU has completed commands up to this fence point.
     if (m_Fence->GetCompletedValue() < m_CurrentFence) {
@@ -325,14 +329,14 @@ void DxRender::flushCommandQueue() {
 	}
 }
 
-std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram) {
+std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, DxRenderPass::PipelineDesc desc) {
     std::vector<DXGI_FORMAT> rtvFormats = {m_BackBufferFormat};
-    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, m_DepthStencilFormat);
+    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, m_DepthStencilFormat, desc);
     return pass;
 }
 
-std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat) {
-    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, dsvFormat);
+std::shared_ptr<DxRenderPass> DxRender::createRenderPass(std::shared_ptr<DxShaderProgram> shaderProgram, std::vector<DXGI_FORMAT> rtvFormats, DXGI_FORMAT dsvFormat, DxRenderPass::PipelineDesc desc) {
+    auto pass = std::make_shared<DxRenderPass>(m_Device.Get(), shaderProgram, rtvFormats, dsvFormat, desc);
     return pass;
 }
 
@@ -360,7 +364,15 @@ std::shared_ptr<DxTexture> DxRender::loadTexture(const std::string& filename) {
     Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap = nullptr;
     DxTextureLoader::loadImageDataFromFile(m_Device.Get(), m_CommandList.Get(), filename, resource, uploadHeap);
-    auto texture = std::make_shared<DxTexture>(resource, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get());
+    auto texture = std::make_shared<DxTexture>(resource, D3D12_SRV_DIMENSION_TEXTURE2D, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get());
+    return texture;
+}
+
+std::shared_ptr<DxTexture> DxRender::loadCubeTexture(const std::array<std::string, 6> &files) {
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap = nullptr;
+    DxTextureLoader::loadCubeMapDataFromFile(m_Device.Get(), m_CommandList.Get(), files, resource, uploadHeap);
+    auto texture = std::make_shared<DxTexture>(resource, D3D12_SRV_DIMENSION_TEXTURECUBE, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get());
     return texture;
 }
 
@@ -383,9 +395,24 @@ void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
             m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
         }
         
-
+        m_CommandList->RSSetViewports(1, &m_ScreenViewport);
+        m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
     } else {
         fb->beginRenderTo(m_CommandList.Get());
+
+        D3D12_VIEWPORT screenViewport;
+        screenViewport.TopLeftX = 0;
+        screenViewport.TopLeftY = 0;
+        screenViewport.Width    = static_cast<float>(2048);
+        screenViewport.Height   = static_cast<float>(2048);
+        screenViewport.MinDepth = 0.0f;
+        screenViewport.MaxDepth = 1.0f;
+
+        D3D12_RECT scissorRect;
+        scissorRect = { 0, 0, static_cast<LONG>(2048), static_cast<LONG>(2048) };
+
+        m_CommandList->RSSetViewports(1, &screenViewport);
+        m_CommandList->RSSetScissorRects(1, &scissorRect);
     }
 
     m_Framebuffer = fb;

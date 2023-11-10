@@ -1,11 +1,12 @@
 #pragma once
 
 #include "DxUtils.hpp"
+#include "DxResource.hpp"
 #include "DxDescriptorPool.hpp"
 
 namespace Engine {
 
-class DxDepthStencilTexture {
+class DxDepthStencilTexture : public DxResource {
 public:
     DxDepthStencilTexture(
         DXGI_FORMAT format,
@@ -27,7 +28,7 @@ public:
 
     void endRenderTo(ID3D12GraphicsCommandList* commandList) {
         // D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-        transitionTo(commandList, D3D12_RESOURCE_STATE_COMMON);
+        transitionTo(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
     }
 
     void setClearValue(float depth, uint8_t stencil) {

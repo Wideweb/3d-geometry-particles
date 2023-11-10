@@ -1,14 +1,20 @@
+#include "light-lib.hlsl"
+
 cbuffer cbCommon : register(b0)
 {
     float4x4 view;
     float4x4 projection;
+    float3 viewPos;
+    float4 ambientLight;
+    Light light;
 };
 
 cbuffer cbObject : register(b1)
 {
 	float4x4 model;
-    float4 color;
 };
+
+TextureCube cubeMap : register(t0);
 
 SamplerState gsamPointWrap        : register(s0);
 SamplerState gsamPointClamp       : register(s1);
@@ -29,29 +35,34 @@ struct VertexIn
 
 struct VertexOut
 {
-    float4 PosW     : POSITION0;
-    float4 PosV     : POSITION1;
     float4 PosH     : SV_POSITION;
-    float3 NormalW  : NORMAL;
-    float4 Color    : COLOR;
-    float2 TexCoord : TEXCOORD;
+    float3 TexCoord : TEXCOORD;
 };
 
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 
-    vout.PosW = mul(float4(vin.PosL, 1.0), model);
-    vout.PosV = mul(vout.PosW, view);
-    vout.PosH = mul(vout.PosV, projection);
-    vout.NormalW = mul(vin.NormalL, (float3x3) model);
-    vout.Color = color;
-    vout.TexCoord = vin.TexCoord;
-	
+    float4x4 fixedView = view;
+    fixedView[0][3] = 0;
+    fixedView[1][3] = 0;
+    fixedView[2][3] = 0;
+    fixedView[3][0] = 0;
+    fixedView[3][1] = 0;
+    fixedView[3][2] = 0;
+    fixedView[3][3] = 1;
+
+    float4 pos = mul(float4(vin.PosL, 1.0), model);
+    pos = mul(pos, fixedView);
+    pos = mul(pos, projection);
+    
+    vout.PosH = pos.xyww;
+    vout.TexCoord = vin.PosL;
+
     return vout;
 }
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return pin.Color;
+    return cubeMap.Sample(gsamLinearWrap, pin.TexCoord);
 }

@@ -6,8 +6,9 @@ namespace Engine {
 
 enum class SHADER_PROGRAM_SLOT_TYPE { 
     DATA,
-    TEXTURE
- };
+    TEXTURE,
+    TEXTURE_ARRAY_4
+};
 
 struct ShaderProgramSlotDesc {
     std::string name;

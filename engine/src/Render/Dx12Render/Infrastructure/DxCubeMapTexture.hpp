@@ -8,28 +8,32 @@
 
 namespace Engine {
 
-class DxTexture : public DxResource {
+class DxCubeMapTexture : public DxResource {
   public:
-    DxTexture(Microsoft::WRL::ComPtr<ID3D12Resource> resource, D3D12_SRV_DIMENSION viewDimension,
-              Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap, ID3D12Device *device, DxDescriptorPool *srvDescPool) {
+    DxTexture(Microsoft::WRL::ComPtr<ID3D12Resource> resource, Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap,
+              ID3D12Device *device, DxDescriptorPool *srvDescPool) {
         m_Resource = resource;
         m_UploadHead = uploadHeap;
         m_SrvDescPool = srvDescPool;
         m_SrvDescriptor = srvDescPool->get();
 
+        std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+        for (int i = 0; i < 6; i++) {
+            D3D12_SUBRESOURCE_DATA subresourceData = {};
+            subresourceData.pData = textureData[i];  // данные текстуры
+            subresourceData.RowPitch = rowPitch;     // ширина строки
+            subresourceData.SlicePitch = slicePitch; // размер среза
+            subresources.push_back(subresourceData);
+        }
+
+        UpdateSubresources(commandList.Get(), cubeMap.Get(), 0, 0, 6, subresources.data());
+
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srvDesc.Format = resource->GetDesc().Format;
-        srvDesc.ViewDimension = viewDimension;
-
-        srvDesc.TextureCube.MostDetailedMip = 0;
-        srvDesc.TextureCube.MipLevels = 1;
-        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MostDetailedMip = 0;
         srvDesc.Texture2D.MipLevels = 1;
-        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
         device->CreateShaderResourceView(m_Resource.Get(), &srvDesc, m_SrvDescriptor.cpu);
     }
 
