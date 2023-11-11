@@ -17,4 +17,4 @@ using is_pointer_like_arrow_dereferencable = decltype(is_pointer_like<T>(0));
 template <typename T>
 static auto constexpr is_pointer_like_arrow_dereferencable_v = is_pointer_like_arrow_dereferencable<T>::value;
 
-} // namespace Engine
+}  // namespace Engine

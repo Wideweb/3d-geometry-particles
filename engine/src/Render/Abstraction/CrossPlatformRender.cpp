@@ -18,4 +18,4 @@ CrossPlatformRender* CrossPlatformRender::create(void* window, uint32_t width, u
 #endif
 }
 
-} // namespace Engine
+}  // namespace Engine

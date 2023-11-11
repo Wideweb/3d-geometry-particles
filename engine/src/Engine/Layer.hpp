@@ -1,18 +1,18 @@
 #pragma once
 
+#include <string>
+
 #include "Layer.hpp"
 #include "Window.hpp"
-
-#include <string>
 
 namespace Engine {
 
 class Layer {
-  protected:
+protected:
     std::string m_Name;
-    bool m_Active = false;
+    bool        m_Active = false;
 
-  public:
+public:
     explicit Layer(std::string name);
     virtual ~Layer() = default;
 
@@ -23,15 +23,15 @@ class Layer {
     void draw();
     void detach();
 
-    std::string &getName() { return m_Name; }
+    std::string& getName() { return m_Name; }
 
     virtual void onAttach() {}
     virtual void onUpdate() {}
     virtual void onDraw() {}
     virtual void onDetach() {}
 
-    virtual void onMouseEvent(MouseEvent &) {}
-    virtual void onWindowEvent(WindowEvent &) {}
+    virtual void onMouseEvent(MouseEvent&) {}
+    virtual void onWindowEvent(WindowEvent&) {}
 };
 
-} // namespace Engine
+}  // namespace Engine

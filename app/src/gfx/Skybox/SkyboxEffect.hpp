@@ -1,12 +1,12 @@
 #pragma once
 
-#include "GfxEffect.hpp"
-
-#include <memory>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
+#include <memory>
+
+#include "GfxEffect.hpp"
 
 class SkyboxEffect : public GfxEffect {
 public:
@@ -19,8 +19,8 @@ private:
         glm::mat4 model;
     };
 
-    std::shared_ptr<Engine::CrossPlatformTexture> m_SkyboxCubeTexture;
-    std::shared_ptr<Engine::CrossPlatformShaderProgram> m_SkyboxShader;
-    std::shared_ptr<Engine::CrossPlatformRenderPass> m_SkyboxRenderPass;
+    std::shared_ptr<Engine::CrossPlatformTexture>                 m_SkyboxCubeTexture;
+    std::shared_ptr<Engine::CrossPlatformShaderProgram>           m_SkyboxShader;
+    std::shared_ptr<Engine::CrossPlatformRenderPass>              m_SkyboxRenderPass;
     std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> m_SkyboxRenderData;
 };

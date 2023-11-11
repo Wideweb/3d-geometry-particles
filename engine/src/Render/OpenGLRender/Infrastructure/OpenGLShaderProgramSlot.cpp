@@ -8,14 +8,12 @@ OpenGLShaderProgramSlot::OpenGLShaderProgramSlot(size_t byteSize) {
     glBufferData(GL_UNIFORM_BUFFER, byteSize, NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // glBindBufferBase(GL_UNIFORM_BUFFER, i, m_Resource); 
+    // glBindBufferBase(GL_UNIFORM_BUFFER, i, m_Resource);
 
     m_ByteSize = byteSize;
 }
 
-OpenGLShaderProgramSlot::~OpenGLShaderProgramSlot() {
-
-}
+OpenGLShaderProgramSlot::~OpenGLShaderProgramSlot() {}
 
 void OpenGLShaderProgramSlot::copyData(void* data) {
     bind();
@@ -23,13 +21,9 @@ void OpenGLShaderProgramSlot::copyData(void* data) {
     unbind();
 }
 
-void OpenGLShaderProgramSlot::bind() const {
-    glBindBuffer(GL_UNIFORM_BUFFER, m_Resource);
-}
+void OpenGLShaderProgramSlot::bind() const { glBindBuffer(GL_UNIFORM_BUFFER, m_Resource); }
 
-void OpenGLShaderProgramSlot::unbind() const {
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
+void OpenGLShaderProgramSlot::unbind() const { glBindBuffer(GL_UNIFORM_BUFFER, 0); }
 
 void OpenGLShaderProgramSlot::release() {
     if (m_Resource > 0) {
@@ -38,4 +32,4 @@ void OpenGLShaderProgramSlot::release() {
     }
 }
 
-} // namespace Engine
+}  // namespace Engine

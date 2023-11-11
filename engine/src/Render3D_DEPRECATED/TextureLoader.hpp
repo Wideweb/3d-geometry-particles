@@ -1,18 +1,19 @@
 #pragma once
 
-#include "Texture.hpp"
-
 #include <stddef.h>
+
 #include <string>
+
+#include "Texture.hpp"
 
 namespace Engine {
 
 class TextureLoader {
-  private:
+private:
     static Texture m_Placeholder;
 
-  public:
-    static Texture loadTexture(const std::string &path);
+public:
+    static Texture loadTexture(const std::string& path);
 };
 
-} // namespace Engine
+}  // namespace Engine

@@ -7,8 +7,8 @@
 namespace Engine {
 
 class ModelLoader {
-  public:
-    static std::shared_ptr<Model> loadObj(const std::string &path);
+public:
+    static std::shared_ptr<Model> loadObj(const std::string& path);
 };
 
-} // namespace Engine
+}  // namespace Engine

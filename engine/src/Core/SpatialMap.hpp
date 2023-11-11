@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Quad.hpp"
-
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include "Quad.hpp"
 
 namespace Engine {
 
@@ -11,10 +11,9 @@ namespace Engine {
  * Словарь для быстрого получения доступа к узлам с помощью их двумерных
  * координат. Использует так называемый "Spatial Hashing".
  */
-template<typename T, size_t QUAD_SIZE>
-class SpatialMap
-{
-  private:
+template <typename T, size_t QUAD_SIZE>
+class SpatialMap {
+private:
     /**
      * Массив сегментов словаря.
      */
@@ -35,8 +34,7 @@ class SpatialMap
      */
     int m_QuadCols;
 
-  public:
-
+public:
     /**
      * Создаст словарь, соответствующий физическому полю с указанными высотой
      * и шириной. Поделит его на сегменты заданного размера.
@@ -46,7 +44,7 @@ class SpatialMap
      */
     void init(int mapHeight, int mapWidth) {
         m_QuadRows = (mapHeight - 1) / QUAD_SIZE + 1;
-        m_QuadCols = (mapWidth  - 1) / QUAD_SIZE + 1;
+        m_QuadCols = (mapWidth - 1) / QUAD_SIZE + 1;
 
         if (m_Quads.size() != m_QuadRows * m_QuadCols) {
             m_Quads.resize(m_QuadRows * m_QuadCols);
@@ -54,7 +52,7 @@ class SpatialMap
     }
 
     void clear() {
-        for (int qIdx: m_ActiveQuads) {
+        for (int qIdx : m_ActiveQuads) {
             m_Quads[qIdx]->clear();
             m_Quads[qIdx] = nullptr;
         }
@@ -91,11 +89,11 @@ class SpatialMap
     }
 
     template <class... TArgs>
-    T* emplaceNode(int x, int y, TArgs &&... args) {
-         int qIdx = quadIndex(x, y);
-         if (m_Quads[qIdx] == nullptr) {
-             m_Quads[qIdx] = std::make_unique<Quad<T, QUAD_SIZE>>();
-             m_ActiveQuads.push_back(qIdx);
+    T* emplaceNode(int x, int y, TArgs&&... args) {
+        int qIdx = quadIndex(x, y);
+        if (m_Quads[qIdx] == nullptr) {
+            m_Quads[qIdx] = std::make_unique<Quad<T, QUAD_SIZE>>();
+            m_ActiveQuads.push_back(qIdx);
         }
         int iIdx = itemIndex(x, y);
         return m_Quads[qIdx]->emplaceNode(iIdx, std::forward<TArgs>(args)...);
@@ -104,7 +102,7 @@ class SpatialMap
     void forEach(std::function<void(T&)> consumer) {
         for (int i = 0; i < m_QuadRows * m_QuadCols; i++) {
             auto& quad = m_Quads[i];
-            
+
             if (quad == nullptr) {
                 continue;
             }
@@ -118,11 +116,8 @@ class SpatialMap
         }
     }
 
-  private:
-
-    int quadIndex(int x, int y) {
-        return (y / QUAD_SIZE) * m_QuadCols + (x / QUAD_SIZE);
-    }
+private:
+    int quadIndex(int x, int y) { return (y / QUAD_SIZE) * m_QuadCols + (x / QUAD_SIZE); }
 
     int itemIndex(int x, int y) {
         int i = x & (QUAD_SIZE - 1);
@@ -131,4 +126,4 @@ class SpatialMap
     }
 };
 
-} // namespace Engine
+}  // namespace Engine

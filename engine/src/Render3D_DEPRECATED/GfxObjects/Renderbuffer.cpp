@@ -1,16 +1,16 @@
 #include "Renderbuffer.hpp"
 
-#include "glad/glad.h"
-
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+
+#include "glad/glad.h"
 
 namespace Engine {
 
 Renderbuffer Renderbuffer::create(unsigned int width, unsigned int height, InternalFormat format) {
     Renderbuffer renderbuffer;
-    renderbuffer.width = width;
+    renderbuffer.width  = width;
     renderbuffer.height = height;
     renderbuffer.format = format;
 
@@ -34,10 +34,10 @@ void Renderbuffer::free() {
 }
 
 void Renderbuffer::resize(unsigned int width, unsigned int height) {
-    this->width = width;
+    this->width  = width;
     this->height = height;
 
     glRenderbufferStorage(GL_RENDERBUFFER, GfxImage::getNativeFormat(format), width, height);
 }
 
-} // namespace Engine
+}  // namespace Engine

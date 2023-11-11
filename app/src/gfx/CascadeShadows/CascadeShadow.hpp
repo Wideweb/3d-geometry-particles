@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Engine.hpp"
-
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <limits>
 #include <algorithm>
 #include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/mat4x4.hpp>
+#include <limits>
+
+#include "Engine.hpp"
 
 class CascadeShadow {
 public:
@@ -19,9 +18,9 @@ public:
         // glm::vec4 frontPlane;
     };
 
-    static std::array<Cascade, 4> calculate(const glm::mat4 &lightView, std::array<float, 8> distances) {
-        auto &app = Engine::Application::get();
-        auto &camera = app.getCamera();
+    static std::array<Cascade, 4> calculate(const glm::mat4& lightView, std::array<float, 8> distances) {
+        auto& app    = Engine::Application::get();
+        auto& camera = app.getCamera();
 
         int w, h;
         camera.getSize(w, h);
@@ -30,11 +29,11 @@ public:
         float s = static_cast<float>(w) / static_cast<float>(h);
         float g = 1.0f / glm::tan(fovY / 2.0f);
 
-        glm::mat4 cameraWorldMatrix = camera.worldMatrix();
-        glm::mat4 L = lightView * cameraWorldMatrix;
+        glm::mat4              cameraWorldMatrix = camera.worldMatrix();
+        glm::mat4              L                 = lightView * cameraWorldMatrix;
         std::array<Cascade, 4> cascades;
 
-        for (size_t k = 0; k < distances.size() / 2; k ++) {
+        for (size_t k = 0; k < distances.size() / 2; k++) {
             float ak = distances[k * 2];
             float bk = distances[k * 2 + 1];
 
@@ -62,7 +61,7 @@ public:
             float d46 = glm::distance(vertices[4], vertices[6]);
 
             float dk = std::ceil(std::max<float>(d06, d46));
-            float T = dk / cascadeWidth;
+            float T  = dk / cascadeWidth;
 
             vertices[0] = L * vertices[0];
             vertices[1] = L * vertices[1];
@@ -74,35 +73,35 @@ public:
             vertices[7] = L * vertices[7];
 
             float xMax = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.x < rhs.x;
-            })->x;
+                             return lhs.x < rhs.x;
+                         })->x;
 
             float xMin = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.x > rhs.x;
-            })->x;
+                             return lhs.x > rhs.x;
+                         })->x;
 
             float yMax = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.y < rhs.y;
-            })->y;
+                             return lhs.y < rhs.y;
+                         })->y;
 
             float yMin = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.y > rhs.y;
-            })->y;
+                             return lhs.y > rhs.y;
+                         })->y;
 
             float zMax = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.z < rhs.z;
-            })->z;
+                             return lhs.z < rhs.z;
+                         })->z;
 
             float zMin = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
-                return lhs.z > rhs.z;
-            })->z;
+                             return lhs.z > rhs.z;
+                         })->z;
 
             float sk_x = ((xMax + xMin) / (2 * T)) * T;
             float sk_y = ((yMax + yMin) / (2 * T)) * T;
             float sk_z = zMin;
 
             glm::vec3 sk = glm::vec3(sk_x, sk_y, sk_z);
-             
+
             glm::mat4 Mk_inv = glm::mat4(
                 lightView[0][0], lightView[0][1], lightView[0][2], 0.0f,
                 lightView[1][0], lightView[1][1], lightView[1][2], 0.0f,
@@ -124,6 +123,7 @@ public:
 
             if (k > 0) {
                 float bk_prev = distances[k - 1];
+
                 glm::vec4 fk = glm::vec4(n, -glm::dot(n, c) - ak);
                 fk /= (bk_prev - ak);
 

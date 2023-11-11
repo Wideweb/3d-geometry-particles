@@ -1,9 +1,8 @@
 #pragma once
 
-#include "glad/glad.h"
-
-#include "OpenGLOpenGLRenderTexture.hpp"
 #include "OpenGLDepthStencilTexture.hpp"
+#include "OpenGLOpenGLRenderTexture.hpp"
+#include "glad/glad.h"
 
 namespace Engine {
 
@@ -35,15 +34,15 @@ public:
     void release();
 
 private:
-    GLuint                                                 m_Resource;
+    GLuint m_Resource;
 
-    size_t                                                 m_Width;
-    size_t                                                 m_Height;
+    size_t m_Width;
+    size_t m_Height;
 
-    std::vector<std::shared_ptr<OpenGLRenderTexture>>      m_Attachments;
-    std::shared_ptr<OpenGLDepthStencilTexture>             m_DSAttachment;
+    std::vector<std::shared_ptr<OpenGLRenderTexture>> m_Attachments;
+    std::shared_ptr<OpenGLDepthStencilTexture>        m_DSAttachment;
 
-    bool                                                   m_RenderTo;
+    bool m_RenderTo;
 };
 
-} // namespace Engine
+}  // namespace Engine

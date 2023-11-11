@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <string>
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-#include "DxUtils.hpp"
 #include "DxMeshGeometry.hpp"
-
+#include "DxUtils.hpp"
 #include "Mesh.hpp"
 
 namespace Engine {
@@ -19,14 +18,13 @@ public:
     const DxMeshGeometry* get(const std::string& geometry) const;
 
     void add(
-        const std::string& geometry,
-        const std::vector<std::string>& subGeometries,
-        const std::vector<Mesh>& subMeshes,
-        ID3D12GraphicsCommandList* commandList);
+        const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes,
+        ID3D12GraphicsCommandList* commandList
+    );
 
 private:
-    ID3D12Device*                                                     m_Device;
-    std::unordered_map<std::string, std::unique_ptr<DxMeshGeometry>>  m_Data;
+    ID3D12Device*                                                    m_Device;
+    std::unordered_map<std::string, std::unique_ptr<DxMeshGeometry>> m_Data;
 };
 
-} // namespace Engine
+}  // namespace Engine

@@ -1,15 +1,16 @@
 
 #pragma once
 
-#include "FlatDictionary.hpp"
-
 #include <functional>
 #include <iterator>
 #include <list>
 
+#include "FlatDictionary.hpp"
+
 namespace Engine {
 
-template <class... TArgs> using EventDelegate = std::function<void(TArgs &&...args)>;
+template <class... TArgs>
+using EventDelegate = std::function<void(TArgs&&... args)>;
 
 class IEventDispatcher {};
 
@@ -32,19 +33,20 @@ class IEventDispatcher {};
 //     }
 // };
 
-template <class... TArgs> class EventDispatcher : public IEventDispatcher {
-  private:
+template <class... TArgs>
+class EventDispatcher : public IEventDispatcher {
+private:
     std::list<EventDelegate<TArgs...>> m_Delegates;
     // ObjectManager<uint32_t> m_Delegates;
 
-  public:
+public:
     void dispatch(TArgs... args) {
-        for (auto &delegate : m_Delegates) {
+        for (auto& delegate : m_Delegates) {
             delegate(std::forward<TArgs>(args)...);
         }
     }
 
-    void addEventCallback(const EventDelegate<TArgs...> &delegate) { m_Delegates.emplace_back(delegate); }
+    void addEventCallback(const EventDelegate<TArgs...>& delegate) { m_Delegates.emplace_back(delegate); }
 };
 
-} // namespace Engine
+}  // namespace Engine

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DxUtils.hpp"
 #include <memory>
 
+#include "DxUtils.hpp"
 #include "UploadBuffer.hpp"
 
 namespace Engine {
@@ -14,10 +14,11 @@ struct DxFrameResource {
 
     uint64_t fence = 0;
 
-    DxFrameResource(ID3D12Device *device) {
+    DxFrameResource(ID3D12Device* device) {
         ThrowIfFailed(
-            device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdListAlloc.GetAddressOf())));
+            device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdListAlloc.GetAddressOf()))
+        );
     }
 };
 
-} // namespace Engine
+}  // namespace Engine

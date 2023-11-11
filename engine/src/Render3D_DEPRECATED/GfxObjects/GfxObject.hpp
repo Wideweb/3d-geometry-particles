@@ -7,10 +7,10 @@ using GfxObjectId = unsigned int;
 constexpr GfxObjectId c_NoGfxObjectId = 0;
 
 class GfxObject {
-  public:
+public:
     GfxObjectId id = c_NoGfxObjectId;
 
-    virtual void bind() const = 0;
+    virtual void bind() const   = 0;
     virtual void unbind() const = 0;
 
     virtual void free() = 0;
@@ -19,4 +19,4 @@ class GfxObject {
     void setEmpty() { this->id = c_NoGfxObjectId; }
 };
 
-} // namespace Engine
+}  // namespace Engine

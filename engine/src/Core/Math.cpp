@@ -10,9 +10,9 @@ glm::vec3 getDirection(glm::vec3 rotation) {
     direction.x = cos(rotation.x) * cos(rotation.y);
     direction.y = sin(rotation.x);
     direction.z = cos(rotation.x) * sin(rotation.y);
-    direction = glm::normalize(direction);
+    direction   = glm::normalize(direction);
 
     return direction;
 }
 
-} // namespace Engine::Math
+}  // namespace Engine::Math

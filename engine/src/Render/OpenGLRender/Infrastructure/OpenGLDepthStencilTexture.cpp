@@ -1,17 +1,14 @@
-#include "RenderTexture.hpp"
-
 #include <stdexcept>
+
+#include "RenderTexture.hpp"
 
 namespace Engine {
 
-OpenGLDepthStencilTexture::OpenGLDepthStencilTexture(
-    size_t width,
-    size_t height
-) {
-    m_Format = GL_DEPTH24_STENCIL8;
+OpenGLDepthStencilTexture::OpenGLDepthStencilTexture(size_t width, size_t height) {
+    m_Format   = GL_DEPTH24_STENCIL8;
     m_DataType = GL_UNSIGNED_INT_24_8;
-    m_Width = width;
-    m_Height = height;
+    m_Width    = width;
+    m_Height   = height;
 
     glGenTextures(1, &m_Resource);
     glBindTexture(GL_TEXTURE_2D, m_Resource);
@@ -31,9 +28,7 @@ OpenGLDepthStencilTexture::OpenGLDepthStencilTexture(
     setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
-OpenGLDepthStencilTexture::~OpenGLDepthStencilTexture() {
-    release();
-}
+OpenGLDepthStencilTexture::~OpenGLDepthStencilTexture() { release(); }
 
 void OpenGLDepthStencilTexture::resize(size_t width, size_t height) {
     if (width == m_Width && height == m_Height) {
@@ -48,17 +43,13 @@ void OpenGLDepthStencilTexture::resize(size_t width, size_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, m_Format, width, height, 0, m_Format, m_DataType, NULL);
     unbind();
 
-    m_Width = width;
+    m_Width  = width;
     m_Height = height;
 }
 
-void OpenGLDepthStencilTexture::bind() const {
-    glBindTexture(GL_TEXTURE_2D, m_Resource);
-}
+void OpenGLDepthStencilTexture::bind() const { glBindTexture(GL_TEXTURE_2D, m_Resource); }
 
-void OpenGLDepthStencilTexture::unbind() const {
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
+void OpenGLDepthStencilTexture::unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
 
 void OpenGLDepthStencilTexture::release() {
     if (m_Resource > 0) {
@@ -66,4 +57,4 @@ void OpenGLDepthStencilTexture::release() {
     }
 }
 
-} // namespace Engine
+}  // namespace Engine

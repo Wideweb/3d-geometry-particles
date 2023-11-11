@@ -7,15 +7,15 @@
 namespace Engine {
 
 class Camera {
-  public:
+public:
     enum class Projection { PERSPECTIVE, ORTHOGONAL };
 
     Camera(glm::vec3 position, glm::vec3 up, glm::vec3 front);
     Camera();
     ~Camera();
 
-    void move(const glm::vec3 &offset);
-    void rotate(const glm::quat &delta);
+    void move(const glm::vec3& offset);
+    void rotate(const glm::quat& delta);
 
     glm::mat4 viewMatrix() const;
     glm::mat4 projectionMatrix() const;
@@ -38,12 +38,12 @@ class Camera {
     void inversePitch();
 
     Projection getProjection() { return mode; }
-    float getFieldOfView() { return fieldOfView; }
-    float getZNear() { return zNear; }
-    float getZFar() const { return zFar; }
-    float getZoom() { return zoom; }
+    float      getFieldOfView() { return fieldOfView; }
+    float      getZNear() { return zNear; }
+    float      getZFar() const { return zFar; }
+    float      getZoom() { return zoom; }
 
-  private:
+private:
     int width;
     int height;
 
@@ -53,11 +53,11 @@ class Camera {
     glm::quat rotation;
 
     Projection mode;
-    glm::mat4 orthogonal;
-    glm::mat4 perspective;
+    glm::mat4  orthogonal;
+    glm::mat4  perspective;
 
     float fieldOfView, zNear, zFar;
     float zoom = 1.0f;
 };
 
-} // namespace Engine
+}  // namespace Engine

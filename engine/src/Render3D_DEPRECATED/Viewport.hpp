@@ -3,7 +3,7 @@
 namespace Engine {
 
 class Viewport {
-  public:
+public:
     unsigned int width;
     unsigned int height;
 
@@ -11,4 +11,4 @@ class Viewport {
     void resize(unsigned int width, unsigned int height);
 };
 
-} // namespace Engine
+}  // namespace Engine

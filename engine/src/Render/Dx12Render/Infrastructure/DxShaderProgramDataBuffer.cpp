@@ -6,14 +6,10 @@ DxShaderProgramDataBuffer::DxShaderProgramDataBuffer(ID3D12Device* device, size_
     auto bufferProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
     size_t byteSizeAligned = DxUtils::CalcConstantBufferByteSize(byteSize);
-    auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSizeAligned);
+    auto   bufferDesc      = CD3DX12_RESOURCE_DESC::Buffer(byteSizeAligned);
 
     ThrowIfFailed(device->CreateCommittedResource(
-        &bufferProperties,
-        D3D12_HEAP_FLAG_NONE,
-        &bufferDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
+        &bufferProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
         IID_PPV_ARGS(&m_Buffer)
     ));
 
@@ -27,12 +23,10 @@ DxShaderProgramDataBuffer::~DxShaderProgramDataBuffer() {
         m_Buffer->Unmap(0, nullptr);
     }
 
-    m_Buffer = nullptr;
+    m_Buffer     = nullptr;
     m_MappedData = nullptr;
 }
 
-void DxShaderProgramDataBuffer::copyData(void* data) {
-    memcpy(m_MappedData, data, m_ByteSize);
-}
+void DxShaderProgramDataBuffer::copyData(void* data) { memcpy(m_MappedData, data, m_ByteSize); }
 
-} // namespace Engine
+}  // namespace Engine

@@ -5,7 +5,7 @@
 namespace Engine {
 
 class GfxImage : public GfxObject {
-  public:
+public:
     enum class InternalFormat {
         NONE,
         DEPTH_COMPONENT,
@@ -36,8 +36,8 @@ class GfxImage : public GfxObject {
 
     InternalFormat format = InternalFormat::NONE;
 
-  public:
-    virtual void bind() const = 0;
+public:
+    virtual void bind() const   = 0;
     virtual void unbind() const = 0;
 
     virtual void free() = 0;
@@ -47,8 +47,8 @@ class GfxImage : public GfxObject {
     static unsigned int getNativeDataType(DataType dataType);
     static unsigned int getNativeDataFormat(DataFormat dataFormat);
     static unsigned int getNativeFormat(InternalFormat format);
-    static DataType formatToDataType(InternalFormat format);
-    static DataFormat formatToDataFormat(InternalFormat format);
+    static DataType     formatToDataType(InternalFormat format);
+    static DataFormat   formatToDataFormat(InternalFormat format);
 };
 
-} // namespace Engine
+}  // namespace Engine

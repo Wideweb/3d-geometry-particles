@@ -1,8 +1,9 @@
 #include "AppLayer.hpp"
 
 class App : public Engine::Application {
-  public:
-    App(void* appInstance) : Engine::Application(appInstance) {
+public:
+    App(void* appInstance)
+    : Engine::Application(appInstance) {
         addLayer<AppLayer>("app");
     }
 
@@ -21,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
 #elif __APPLE__ || __linux__ || __unix__ || defined(_POSIX_VERSION)
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     auto app = new App(nullptr);
     app->run();
     delete app;

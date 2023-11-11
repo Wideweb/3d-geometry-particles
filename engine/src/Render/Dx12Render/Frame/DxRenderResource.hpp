@@ -1,22 +1,22 @@
 #pragma once
 
-#include "DxUtils.hpp"
-#include "DxFrameResource.hpp"
-
-#include <memory>
 #include <array>
+#include <memory>
+
+#include "DxFrameResource.hpp"
+#include "DxUtils.hpp"
 
 namespace Engine {
 
 class DxRenderResource {
-  public:
+public:
     std::array<std::unique_ptr<DxFrameResource>, 3> frameResources;
 
     uint64_t currFrameIndex = 0;
 
-    DxFrameResource *currFrameResource = nullptr;
+    DxFrameResource* currFrameResource = nullptr;
 
-    DxRenderResource(ID3D12Device *device) {
+    DxRenderResource(ID3D12Device* device) {
         for (int i = 0; i < 3; i++) {
             frameResources[i] = std::make_unique<DxFrameResource>(device);
         }
@@ -24,7 +24,7 @@ class DxRenderResource {
         currFrameResource = frameResources[0].get();
     }
 
-    void beginFrame(int frameIndex, ID3D12Fence *fence) {
+    void beginFrame(int frameIndex, ID3D12Fence* fence) {
         currFrameResource = frameResources[frameIndex].get();
 
         // Has the GPU finished processing the commands of the current frame resource?
@@ -40,4 +40,4 @@ class DxRenderResource {
     void setFence(uint64_t fence) { currFrameResource->fence = fence; }
 };
 
-} // namespace Engine
+}  // namespace Engine

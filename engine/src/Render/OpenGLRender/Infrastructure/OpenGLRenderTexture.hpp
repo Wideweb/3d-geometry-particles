@@ -6,11 +6,7 @@ namespace Engine {
 
 class OpenGLRenderTexture {
 public:
-    OpenGLRenderTexture(
-        GLenum format,
-        GLenum dataType,
-        size_t width,
-        size_t height);
+    OpenGLRenderTexture(GLenum format, GLenum dataType, size_t width, size_t height);
 
     virtual ~OpenGLRenderTexture();
 
@@ -36,14 +32,14 @@ public:
     void unbind() const;
 
 private:
-    GLuint                                              m_Resource;
-    float                                               m_ClearColor[4];
+    GLuint m_Resource;
+    float  m_ClearColor[4];
 
-    GLenum                                              m_Format;
-    GLenum                                              m_DataType;
+    GLenum m_Format;
+    GLenum m_DataType;
 
-    size_t                                              m_Width;
-    size_t                                              m_Height;
+    size_t m_Width;
+    size_t m_Height;
 };
 
-} // namespace Engine
+}  // namespace Engine

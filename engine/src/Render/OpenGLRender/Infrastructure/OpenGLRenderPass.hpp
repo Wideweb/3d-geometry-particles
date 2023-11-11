@@ -1,9 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "DxUtils.hpp"
 #include "ShaderProgram.hpp"
-
-#include <memory>
 
 namespace Engine {
 
@@ -15,7 +15,7 @@ public:
     void unbind() const;
 
 private:
-    std::shared_ptr<OpenGLShaderProgram>              m_ShaderProgram;
+    std::shared_ptr<OpenGLShaderProgram> m_ShaderProgram;
 };
 
-} // namespace Engine
+}  // namespace Engine

@@ -1,21 +1,21 @@
 #include "Texture.hpp"
 
-#include "glad/glad.h"
-
 #include <stdexcept>
+
+#include "glad/glad.h"
 
 namespace Engine {
 
 static GLenum getGLTextureType(Texture::TextureType type) {
     switch (type) {
-    case Texture::TextureType::COLOR:
-        return GL_TEXTURE_2D;
-    case Texture::TextureType::CUBE_MAP:
-        return GL_TEXTURE_CUBE_MAP;
-    case Texture::TextureType::DEPTH_BUFFER:
-        return GL_TEXTURE_2D;
-    default:
-        return GL_TEXTURE_2D;
+        case Texture::TextureType::COLOR:
+            return GL_TEXTURE_2D;
+        case Texture::TextureType::CUBE_MAP:
+            return GL_TEXTURE_CUBE_MAP;
+        case Texture::TextureType::DEPTH_BUFFER:
+            return GL_TEXTURE_2D;
+        default:
+            return GL_TEXTURE_2D;
     }
 }
 
@@ -24,11 +24,13 @@ void Texture::bind() const { glBindTexture(getGLTextureType(type), id); }
 void Texture::unbind() const { glBindTexture(getGLTextureType(type), 0); }
 
 void Texture::resize(unsigned int width, unsigned int height) {
-    this->width = width;
+    this->width  = width;
     this->height = height;
 
-    glTexImage2D(getGLTextureType(type), 0, GfxImage::getNativeFormat(format), width, height, 0,
-                 GfxImage::getNativeDataFormat(dataFormat), GfxImage::getNativeDataType(dataType), NULL);
+    glTexImage2D(
+        getGLTextureType(type), 0, GfxImage::getNativeFormat(format), width, height, 0,
+        GfxImage::getNativeDataFormat(dataFormat), GfxImage::getNativeDataType(dataType), NULL
+    );
 }
 
 void Texture::free() {
@@ -46,7 +48,7 @@ Texture Texture::getEmpty() {
 
 Texture Texture::createDepthBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -63,25 +65,27 @@ Texture Texture::createDepthBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::DEPTH_BUFFER;
-    texture.format = Texture::InternalFormat::DEPTH_COMPONENT;
+    texture.type       = Texture::TextureType::DEPTH_BUFFER;
+    texture.format     = Texture::InternalFormat::DEPTH_COMPONENT;
     texture.dataFormat = Texture::DataFormat::DEPTH_COMPONENT;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 CubeMapTexture CubeMapTexture::createCubeDepthBuffer(int width, int height) {
     CubeMapTexture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
 
     for (unsigned int i = 0; i < 6; i++) {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT,
-                     GL_FLOAT, NULL);
+        glTexImage2D(
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+            NULL
+        );
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -92,17 +96,17 @@ CubeMapTexture CubeMapTexture::createCubeDepthBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-    texture.type = Texture::TextureType::CUBE_MAP;
-    texture.format = Texture::InternalFormat::DEPTH_COMPONENT;
+    texture.type       = Texture::TextureType::CUBE_MAP;
+    texture.format     = Texture::InternalFormat::DEPTH_COMPONENT;
     texture.dataFormat = Texture::DataFormat::DEPTH_COMPONENT;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 CubeMapTexture CubeMapTexture::createCubeMap() {
     CubeMapTexture texture;
-    texture.width = 0;
+    texture.width  = 0;
     texture.height = 0;
 
     glGenTextures(1, &texture.id);
@@ -116,7 +120,7 @@ CubeMapTexture CubeMapTexture::createCubeMap() {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::CUBE_MAP;
+    texture.type     = Texture::TextureType::CUBE_MAP;
     texture.dataType = Texture::DataType::UNSIGNED_BYTE;
 
     return texture;
@@ -124,7 +128,7 @@ CubeMapTexture CubeMapTexture::createCubeMap() {
 
 Texture Texture::createRGBA8FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -139,17 +143,17 @@ Texture Texture::createRGBA8FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGBA8F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGBA8F;
     texture.dataFormat = Texture::DataFormat::RGBA;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createRGBA16FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -164,17 +168,17 @@ Texture Texture::createRGBA16FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGBA16F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGBA16F;
     texture.dataFormat = Texture::DataFormat::RGBA;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createRGBA32FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -189,17 +193,17 @@ Texture Texture::createRGBA32FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGBA32F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGBA32F;
     texture.dataFormat = Texture::DataFormat::RGBA;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createRGB8FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -214,17 +218,17 @@ Texture Texture::createRGB8FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGB8F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGB8F;
     texture.dataFormat = Texture::DataFormat::RGB;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
-Texture Texture::createRGB16FBuffer(int width, int height, void *data) {
+Texture Texture::createRGB16FBuffer(int width, int height, void* data) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -239,17 +243,17 @@ Texture Texture::createRGB16FBuffer(int width, int height, void *data) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGB16F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGB16F;
     texture.dataFormat = Texture::DataFormat::RGB;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createRGB32FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -264,17 +268,17 @@ Texture Texture::createRGB32FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGB32F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGB32F;
     texture.dataFormat = Texture::DataFormat::RGB;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createRGB8IBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -289,17 +293,17 @@ Texture Texture::createRGB8IBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGB8I;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGB8I;
     texture.dataFormat = Texture::DataFormat::RGB;
-    texture.dataType = Texture::DataType::UNSIGNED_BYTE;
+    texture.dataType   = Texture::DataType::UNSIGNED_BYTE;
 
     return texture;
 }
 
-Texture Texture::createRGBA8Buffer(int width, int height, void *data) {
+Texture Texture::createRGBA8Buffer(int width, int height, void* data) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -312,17 +316,17 @@ Texture Texture::createRGBA8Buffer(int width, int height, void *data) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::RGBA8;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::RGBA8;
     texture.dataFormat = Texture::DataFormat::RGBA;
-    texture.dataType = Texture::DataType::UNSIGNED_BYTE;
+    texture.dataType   = Texture::DataType::UNSIGNED_BYTE;
 
     return texture;
 }
 
 Texture Texture::createR32IBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -338,17 +342,17 @@ Texture Texture::createR32IBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::R32I;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::R32I;
     texture.dataFormat = Texture::DataFormat::RED_INTEGER;
-    texture.dataType = Texture::DataType::INT;
+    texture.dataType   = Texture::DataType::INT;
 
     return texture;
 }
 
 Texture Texture::createR8Buffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -364,17 +368,17 @@ Texture Texture::createR8Buffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::R8F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::R8F;
     texture.dataFormat = Texture::DataFormat::RED;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createR16FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -390,17 +394,17 @@ Texture Texture::createR16FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::R16F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::R16F;
     texture.dataFormat = Texture::DataFormat::RED;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
 Texture Texture::createR32FBuffer(int width, int height) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glGenTextures(1, &texture.id);
@@ -416,17 +420,17 @@ Texture Texture::createR32FBuffer(int width, int height) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::R32F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::R32F;
     texture.dataFormat = Texture::DataFormat::RED;
-    texture.dataType = Texture::DataType::FLOAT;
+    texture.dataType   = Texture::DataType::FLOAT;
 
     return texture;
 }
 
-Texture Texture::createTrueTypeGlyph(int width, int height, unsigned char *data) {
+Texture Texture::createTrueTypeGlyph(int width, int height, unsigned char* data) {
     Texture texture;
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -445,12 +449,12 @@ Texture Texture::createTrueTypeGlyph(int width, int height, unsigned char *data)
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    texture.type = Texture::TextureType::COLOR;
-    texture.format = Texture::InternalFormat::R8F;
+    texture.type       = Texture::TextureType::COLOR;
+    texture.format     = Texture::InternalFormat::R8F;
     texture.dataFormat = Texture::DataFormat::RED;
-    texture.dataType = Texture::DataType::UNSIGNED_BYTE;
+    texture.dataType   = Texture::DataType::UNSIGNED_BYTE;
 
     return texture;
 }
 
-} // namespace Engine
+}  // namespace Engine

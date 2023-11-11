@@ -2,6 +2,6 @@
 
 namespace Engine {
 
-class DxResource { };
+class DxResource {};
 
-} // namespace Engine
+}  // namespace Engine

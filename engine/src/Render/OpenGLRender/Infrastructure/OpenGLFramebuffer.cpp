@@ -1,26 +1,18 @@
 #include "OpenGLFramebuffer.hpp"
 
-#include "OpenGLUtils.hpp"
-
 #include <vector>
+
+#include "OpenGLUtils.hpp"
 
 namespace Engine {
 
-OpenGLFramebuffer::OpenGLFramebuffer()
-    m_RenderTo(false),
-    m_Width(0),
-    m_Height(0)
-{    
-    glGenFramebuffers(1, &m_Resource);
-}
+OpenGLFramebuffer::OpenGLFramebuffer() m_RenderTo(false), m_Width(0), m_Height(0) { glGenFramebuffers(1, &m_Resource); }
 
-OpenGLFramebuffer::~OpenGLFramebuffer() {
-    release();
-}
+OpenGLFramebuffer::~OpenGLFramebuffer() { release(); }
 
 void OpenGLFramebuffer::addAttachment(std::shared_ptr<OpenGLRenderTexture> attachment) {
     bind();
-    
+
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + m_Attachments.size(), attachment.getResource(), 0);
     Gfx::checkError();
 
@@ -53,13 +45,13 @@ void OpenGLFramebuffer::resize(size_t width, size_t height) {
         return;
     }
 
-    for (auto& rt: m_Attachments) {
+    for (auto& rt : m_Attachments) {
         rt->resize(width, height);
     }
 
     m_DSAttachment->resize(width, height);
 
-    m_Width = width;
+    m_Width  = width;
     m_Height = height;
 }
 
@@ -73,17 +65,11 @@ void OpenGLFramebuffer::endRenderTo() {
     m_RenderTo = false;
 }
 
-void OpenGLFramebuffer::clear() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-}
+void OpenGLFramebuffer::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); }
 
-void OpenGLFramebuffer::bind() const {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_Resource);
-}
+void OpenGLFramebuffer::bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_Resource); }
 
-void OpenGLFramebuffer::unbind() const {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
+void OpenGLFramebuffer::unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 void OpenGLFramebuffer::release() {
     if (m_Resource > 0) {
@@ -92,4 +78,4 @@ void OpenGLFramebuffer::release() {
     }
 }
 
-} // namespace Engine
+}  // namespace Engine

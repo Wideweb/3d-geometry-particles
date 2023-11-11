@@ -5,7 +5,7 @@
 namespace Engine {
 
 class Renderbuffer : public GfxImage {
-  public:
+public:
     void bind() const override;
     void unbind() const override;
     void free() override;
@@ -14,4 +14,4 @@ class Renderbuffer : public GfxImage {
     static Renderbuffer create(unsigned int width, unsigned int height, InternalFormat format);
 };
 
-} // namespace Engine
+}  // namespace Engine

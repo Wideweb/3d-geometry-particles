@@ -1,7 +1,7 @@
 #pragma once
 
-#include "DxRenderTexture.hpp"
 #include "DxDepthStencilTexture.hpp"
+#include "DxRenderTexture.hpp"
 #include "DxUtils.hpp"
 
 namespace Engine {
@@ -27,13 +27,13 @@ public:
     std::shared_ptr<DxDepthStencilTexture> getDSAttachment() const noexcept { return m_DSAttachment; }
 
 private:
-    size_t                                                   m_Width;
-    size_t                                                   m_Height;
+    size_t m_Width;
+    size_t m_Height;
 
-    std::vector<std::shared_ptr<DxRenderTexture>>            m_Attachments;
-    std::shared_ptr<DxDepthStencilTexture>                   m_DSAttachment;
+    std::vector<std::shared_ptr<DxRenderTexture>> m_Attachments;
+    std::shared_ptr<DxDepthStencilTexture>        m_DSAttachment;
 
-    bool                                                     m_RenderTo;
+    bool m_RenderTo;
 };
 
-} // namespace Engine
+}  // namespace Engine

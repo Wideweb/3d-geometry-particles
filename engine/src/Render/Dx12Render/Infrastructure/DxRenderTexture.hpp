@@ -1,31 +1,22 @@
 #pragma once
 
-#include "DxUtils.hpp"
 #include "DxDescriptorPool.hpp"
 #include "DxResource.hpp"
+#include "DxUtils.hpp"
 
 namespace Engine {
 
 class DxRenderTexture : public DxResource {
 public:
     DxRenderTexture(
-        Microsoft::WRL::ComPtr<ID3D12Resource> resource,
-        DXGI_FORMAT format,
-        D3D12_RESOURCE_FLAGS flags,
-        size_t width,
-        size_t height,
-        ID3D12Device* device,
-        DxDescriptorPool* srvDescPool,
-        DxDescriptorPool* rtvDescPool);
+        Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width,
+        size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+    );
 
     DxRenderTexture(
-        DXGI_FORMAT format,
-        D3D12_RESOURCE_FLAGS flags,
-        size_t width,
-        size_t height,
-        ID3D12Device* device,
-        DxDescriptorPool* srvDescPool,
-        DxDescriptorPool* rtvDescPool);
+        DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height, ID3D12Device* device,
+        DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+    );
 
     void resize(size_t width, size_t height);
 
@@ -50,10 +41,10 @@ public:
 
     void clear(ID3D12GraphicsCommandList* commandList);
 
-    ID3D12Resource* getResource() const noexcept { return m_Resource.Get(); }
+    ID3D12Resource*       getResource() const noexcept { return m_Resource.Get(); }
     D3D12_RESOURCE_STATES getCurrentState() const noexcept { return m_State; }
 
-    DXGI_FORMAT getFormat() const noexcept { return m_Format; }
+    DXGI_FORMAT          getFormat() const noexcept { return m_Format; }
     D3D12_RESOURCE_FLAGS getFlags() const noexcept { return m_Flags; }
 
     DxDescriptor getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
@@ -62,21 +53,21 @@ public:
     const float* getClearColor() const noexcept { return m_ClearColor; }
 
 private:
-    ID3D12Device*                                       m_Device;
-    DxDescriptorPool*                                   m_SrvDescPool;
-    DxDescriptorPool*                                   m_RtvDescPool;
+    ID3D12Device*     m_Device;
+    DxDescriptorPool* m_SrvDescPool;
+    DxDescriptorPool* m_RtvDescPool;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource>              m_Resource;
-    D3D12_RESOURCE_STATES                               m_State;
-    DxDescriptor                                        m_SrvDescriptor;
-    DxDescriptor                                        m_RtvDescriptor;
-    float                                               m_ClearColor[4];
+    Microsoft::WRL::ComPtr<ID3D12Resource> m_Resource;
+    D3D12_RESOURCE_STATES                  m_State;
+    DxDescriptor                           m_SrvDescriptor;
+    DxDescriptor                           m_RtvDescriptor;
+    float                                  m_ClearColor[4];
 
-    DXGI_FORMAT                                         m_Format;
-    D3D12_RESOURCE_FLAGS                                m_Flags;
+    DXGI_FORMAT          m_Format;
+    D3D12_RESOURCE_FLAGS m_Flags;
 
-    size_t                                              m_Width;
-    size_t                                              m_Height;
+    size_t m_Width;
+    size_t m_Height;
 };
 
-} // namespace Engine
+}  // namespace Engine

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "CustomTraits.hpp"
-
 #include <vector>
+
+#include "CustomTraits.hpp"
 
 namespace Engine {
 
-template<typename TNode>
+template <typename TNode>
 class BalancedBinaryHeap {
-  private:
+private:
     /**
      * Массив узлов в очереди. Представляет собой сбалансированную двоичную
      * кучу, где детьми элемента nodes[n] являются элементы nodes[2*n+1]
@@ -21,16 +21,14 @@ class BalancedBinaryHeap {
      */
     uint32_t m_Size = 0;
 
-  public:
-
+public:
     /**
      * Вместимость очереди по умолчанию.
      */
-    BalancedBinaryHeap() : BalancedBinaryHeap(11) {}
+    BalancedBinaryHeap()
+    : BalancedBinaryHeap(11) {}
 
-    BalancedBinaryHeap(int initialCapacity) {
-        m_Nodes.resize(initialCapacity);
-    }
+    BalancedBinaryHeap(int initialCapacity) { m_Nodes.resize(initialCapacity); }
 
     /**
      * Добавит узел в очередь.
@@ -50,9 +48,7 @@ class BalancedBinaryHeap {
      *
      * @param node узел.
      */
-    void update(const TNode& node) {
-        siftUp(getHeapIndex(node), node);
-    }
+    void update(const TNode& node) { siftUp(getHeapIndex(node), node); }
 
     /**
      * Удалит из очереди и вернет узел с наименьшей комбинированной стоимостью.
@@ -76,20 +72,15 @@ class BalancedBinaryHeap {
      * @param node узел.
      * @return true, если узел находится в очереди.
      */
-    bool contains(const TNode& node) const {
-        return getHeapIndex(node) >= 0;
-    }
+    bool contains(const TNode& node) const { return getHeapIndex(node) >= 0; }
 
     /**
      * Определяет, пустая ли очередь.
      * @return true, если очередь пуста.
      */
-    bool empty() {
-        return m_Size == 0;
-    }
+    bool empty() { return m_Size == 0; }
 
-  private:
-
+private:
     /**
      * Переместит узел вверх по дереву, отталкиваясь от его комбинированной
      * стоимости.
@@ -100,13 +91,12 @@ class BalancedBinaryHeap {
     void siftUp(uint32_t index, const TNode& node) {
         while (index > 0) {
             uint32_t parentIndex = (index - 1) >> 1;
-            if (greater(node, m_Nodes[parentIndex]))
-            {
+            if (greater(node, m_Nodes[parentIndex])) {
                 break;
             }
             setHeapIndex(m_Nodes[parentIndex], index);
             m_Nodes[index] = std::move(m_Nodes[parentIndex]);
-            index = parentIndex;
+            index          = parentIndex;
         }
 
         setHeapIndex(node, index);
@@ -123,20 +113,20 @@ class BalancedBinaryHeap {
     void siftDown(uint32_t index, TNode& node) {
         uint32_t half = m_Size >> 1;
         while (index < half) {
-            uint32_t curr = (index << 1) + 1;
+            uint32_t curr  = (index << 1) + 1;
             uint32_t right = curr + 1;
 
             if (right < m_Size && greater(m_Nodes[curr], m_Nodes[right])) {
                 curr = right;
             }
-            
+
             if (!greater(node, m_Nodes[curr])) {
                 break;
             }
-            
+
             setHeapIndex(m_Nodes[curr], index);
             m_Nodes[index] = m_Nodes[curr];
-            index = curr;
+            index          = curr;
         }
 
         setHeapIndex(node, index);
@@ -147,40 +137,50 @@ class BalancedBinaryHeap {
      * Увеличит вместимость очереди.
      */
     void grow() {
-        uint32_t size = m_Nodes.size();
+        uint32_t size    = m_Nodes.size();
         uint32_t newSize = size + (size < 64 ? size + 2 : size >> 1);
         m_Nodes.resize(newSize);
     }
 
     template <typename T>
-    bool greater(const T& first, const T& second, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    bool greater(
+        const T& first, const T& second, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0
+    ) const {
         return (*first) > (*second);
     }
 
     template <typename T>
-    bool greater(const T& first, const T& second, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    bool greater(
+        const T& first, const T& second, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0
+    ) const {
         return first > second;
     }
 
     template <typename T>
-    void setHeapIndex(const T& node, int32_t index, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    void setHeapIndex(
+        const T& node, int32_t index, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0
+    ) const {
         node->setHeapIndex(index);
     }
 
     template <typename T>
-    void setHeapIndex(const T& node, int32_t index, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    void setHeapIndex(
+        const T& node, int32_t index, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0
+    ) const {
         node.setHeapIndex(index);
     }
 
     template <typename T>
-    int32_t getHeapIndex(const T& node, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    int32_t getHeapIndex(const T& node, typename std::enable_if<is_pointer_like_arrow_dereferencable_v<T>>::type* = 0)
+        const {
         return node->getHeapIndex();
     }
 
     template <typename T>
-    int32_t getHeapIndex(const T& node, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0) const {
+    int32_t getHeapIndex(const T& node, typename std::enable_if<!is_pointer_like_arrow_dereferencable_v<T>>::type* = 0)
+        const {
         return node.getHeapIndex();
     }
 };
 
-} // namespace Engine
+}  // namespace Engine

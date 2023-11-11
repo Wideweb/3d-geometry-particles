@@ -7,8 +7,8 @@
 namespace Engine {
 
 class ModelLoader {
-  public:
-    static Mesh loadObj(const std::string &path);
+public:
+    static Mesh loadObj(const std::string& path);
 };
 
-} // namespace Engine
+}  // namespace Engine

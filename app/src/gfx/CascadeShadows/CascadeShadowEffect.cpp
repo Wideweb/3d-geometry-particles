@@ -1,15 +1,15 @@
 #include "CascadeShadowEffect.hpp"
 
-#include "ModelFactory.hpp"
 #include "CascadeShadow.hpp"
+#include "ModelFactory.hpp"
 
 void CascadeShadowEffect::bind() {
-    auto &app = Engine::Application::get();
-    auto &render = app.getRender();
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
 
-    Engine::Mesh monkey = Engine::ModelLoader::loadObj("./../assets/models/monkey.obj");
+    Engine::Mesh monkey  = Engine::ModelLoader::loadObj("./../assets/models/monkey.obj");
     Engine::Mesh terrain = ModelFactory::createPlane(50.0f, 10, 10);
-    Engine::Mesh plane = ModelFactory::createPlane(2.0f, 1, 1);
+    Engine::Mesh plane   = ModelFactory::createPlane(2.0f, 1, 1);
 
     render.registerGeometry("cascade-shadow", {"instance", "terrain", "plane"}, {monkey, terrain, plane});
 
@@ -17,7 +17,7 @@ void CascadeShadowEffect::bind() {
     initLightPass();
     initDebugPass();
 
-    m_TerrainRenderData = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
+    m_TerrainRenderData         = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
     m_TerrainMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
 
     for (size_t i = 0; i < 100; i++) {
@@ -27,8 +27,8 @@ void CascadeShadowEffect::bind() {
 }
 
 void CascadeShadowEffect::initDepthPass() {
-    auto &app = Engine::Application::get();
-    auto &render = app.getRender();
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
 
     std::vector<Engine::ShaderProgramSlotDesc> slots = {
         {"cbCommon", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA},
@@ -46,9 +46,9 @@ void CascadeShadowEffect::initDepthPass() {
     }
 
     Engine::CrossPlatformRenderPass::PipelineDesc pipelineDesc;
-    pipelineDesc.cullMode = Engine::CULL_MODE::FRONT;
+    pipelineDesc.cullMode        = Engine::CULL_MODE::FRONT;
     pipelineDesc.depthClipEnable = true;
-    pipelineDesc.depthFunc = Engine::DEPTH_FUNC::LESS;
+    pipelineDesc.depthFunc       = Engine::DEPTH_FUNC::LESS;
 
     std::vector<Engine::CROSS_PLATFROM_TEXTURE_FORMATS> rtvs = {};
 
@@ -57,40 +57,43 @@ void CascadeShadowEffect::initDepthPass() {
 }
 
 void CascadeShadowEffect::initLightPass() {
-    auto &app = Engine::Application::get();
-    auto &render = app.getRender();
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
 
     std::vector<Engine::ShaderProgramSlotDesc> slots = {
-        {"cbCommon", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA},
-        {"cbObject", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA},
-        {"cbMaterial", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA},
-        {"shadowMap", Engine::SHADER_PROGRAM_SLOT_TYPE::TEXTURE_ARRAY_4},
+        {"cbCommon",   Engine::SHADER_PROGRAM_SLOT_TYPE::DATA           },
+        {"cbObject",   Engine::SHADER_PROGRAM_SLOT_TYPE::DATA           },
+        {"cbMaterial", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA           },
+        {"shadowMap",  Engine::SHADER_PROGRAM_SLOT_TYPE::TEXTURE_ARRAY_4},
     };
-    m_LightShader = render.createShaderProgram("./../assets/shaders/dx/light.hlsl", "./../assets/shaders/dx/light-cascade-shadow.hlsl", slots);
+    m_LightShader = render.createShaderProgram(
+        "./../assets/shaders/dx/light.hlsl", "./../assets/shaders/dx/light-cascade-shadow.hlsl", slots
+    );
 
     Engine::CrossPlatformRenderPass::PipelineDesc rsLightPipelineDesc;
-    rsLightPipelineDesc.cullMode = Engine::CULL_MODE::BACK;
+    rsLightPipelineDesc.cullMode        = Engine::CULL_MODE::BACK;
     rsLightPipelineDesc.depthClipEnable = true;
-    rsLightPipelineDesc.depthFunc = Engine::DEPTH_FUNC::LESS;
+    rsLightPipelineDesc.depthFunc       = Engine::DEPTH_FUNC::LESS;
 
     m_LightRenderPass = render.createRenderPass(m_LightShader, rsLightPipelineDesc);
 }
 
 void CascadeShadowEffect::initDebugPass() {
-    auto &app = Engine::Application::get();
-    auto &render = app.getRender();
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
 
     std::vector<Engine::ShaderProgramSlotDesc> slots = {
-        {"cbObject", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA},
+        {"cbObject",   Engine::SHADER_PROGRAM_SLOT_TYPE::DATA   },
         {"diffuseMap", Engine::SHADER_PROGRAM_SLOT_TYPE::TEXTURE},
     };
-    m_ScreenTextureShader = render.createShaderProgram("./../assets/shaders/dx/screen-texture.hlsl",
-                                                       "./../assets/shaders/dx/screen-texture.hlsl", slots);
+    m_ScreenTextureShader = render.createShaderProgram(
+        "./../assets/shaders/dx/screen-texture.hlsl", "./../assets/shaders/dx/screen-texture.hlsl", slots
+    );
 
     Engine::CrossPlatformRenderPass::PipelineDesc pipelineDesc;
-    pipelineDesc.cullMode = Engine::CULL_MODE::NONE;
+    pipelineDesc.cullMode        = Engine::CULL_MODE::NONE;
     pipelineDesc.depthClipEnable = false;
-    pipelineDesc.depthFunc = Engine::DEPTH_FUNC::LESS;
+    pipelineDesc.depthFunc       = Engine::DEPTH_FUNC::LESS;
 
     m_ScreenTextureRenderPass = render.createRenderPass(m_ScreenTextureShader, pipelineDesc);
 
@@ -101,8 +104,12 @@ void CascadeShadowEffect::initDebugPass() {
 
 void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
     // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
-    glm::mat4 projFix =
-        glm::mat4(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 0.5f, 0.0f, 1.0f);
+    glm::mat4 projFix = glm::mat4(
+        0.5f,  0.0f, 0.0f, 0.0f,
+        0.0f, -0.5f, 0.0f, 0.0f,
+        0.0f,  0.0f, 1.0f, 0.0f,
+        0.5f,  0.5f, 0.0f, 1.0f
+    );
 
     auto cascades = CascadeShadow::calculate(commonData.light.view, m_CascadeDistances);
 
@@ -119,10 +126,10 @@ void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
 }
 
 void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> commonData) {
-    auto &app = Engine::Application::get();
-    auto &camera = app.getCamera();
-    auto &render = app.getRender();
-    auto &time = app.getTime();
+    auto& app    = Engine::Application::get();
+    auto& camera = app.getCamera();
+    auto& render = app.getRender();
+    auto& time   = app.getTime();
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////////////// UPDATE GPU DATA //////////////////////////////
@@ -134,8 +141,8 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
 
     GfxEffect::RenderMaterialData terrainMaterial;
     terrainMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
-    terrainMaterial.fresnelR0 = glm::vec3(0.01f);
-    terrainMaterial.roughness = 0.5f;
+    terrainMaterial.fresnelR0     = glm::vec3(0.01f);
+    terrainMaterial.roughness     = 0.5f;
     m_TerrainMaterialRenderData->copyData(&terrainMaterial);
 
     for (size_t i = 0; i < m_InstancesRenderData.size(); i++) {
@@ -143,10 +150,10 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
         int z = i % 5 + 1;
 
         float uv_x = x * 5.0f / m_InstancesRenderData.size();
-        float y = std::sin(uv_x * 6.28f * 2.0 + time.getTotalSeconds()) + 1.0f;
+        float y    = std::sin(uv_x * 6.28f * 2.0 + time.getTotalSeconds()) + 1.0f;
 
         glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(x * 5.0f, 0.0f, z * 5.0f)) * model;
+        model           = glm::translate(glm::mat4(1.0f), glm::vec3(x * 5.0f, 0.0f, z * 5.0f)) * model;
 
         RenderItemData itemData;
         itemData.model = glm::transpose(model);
@@ -155,8 +162,8 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
 
     GfxEffect::RenderMaterialData instanceMaterial;
     instanceMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
-    instanceMaterial.fresnelR0 = glm::vec3(0.01f);
-    instanceMaterial.roughness = 0.5f;
+    instanceMaterial.fresnelR0     = glm::vec3(0.01f);
+    instanceMaterial.roughness     = 0.5f;
     m_InstanceMaterialRenderData->copyData(&instanceMaterial);
     ///////////////////////////// UPDATE GPU DATA //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -166,7 +173,7 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
 
     render.setRenderPass(m_DepthRenderPass);
     render.setViewport(2048, 2048);
-    
+
     for (size_t i = 0; i < m_DepthMaps.size(); i++) {
         render.setFramebuffer(m_DepthMaps[i].framebuffer);
         render.clear(0.0f, 0.0f, 0.0f, 0.0f);

@@ -28,18 +28,18 @@ public:
 
     void bind() const;
     void unbind() const;
-    
+
     void release();
 
 private:
-    GLuint                                              m_Resource;
-    float                                               m_ClearColor[4];
+    GLuint m_Resource;
+    float  m_ClearColor[4];
 
-    GLenum                                              m_Format;
-    GLenum                                              m_DataType;
+    GLenum m_Format;
+    GLenum m_DataType;
 
-    size_t                                              m_Width;
-    size_t                                              m_Height;
+    size_t m_Width;
+    size_t m_Height;
 };
 
-} // namespace Engine
+}  // namespace Engine

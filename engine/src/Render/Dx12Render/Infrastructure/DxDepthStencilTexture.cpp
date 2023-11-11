@@ -5,25 +5,23 @@
 namespace Engine {
 
 DxDepthStencilTexture::DxDepthStencilTexture(
-    DXGI_FORMAT format,
-    size_t width,
-    size_t height,
-    ID3D12Device* device,
-    DxDescriptorPool* srvDescPool,
+    DXGI_FORMAT format, size_t width, size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool,
     DxDescriptorPool* dsvDescPool
 ) {
-    m_Device = device;
+    m_Device      = device;
     m_SrvDescPool = srvDescPool;
     m_DsvDescPool = dsvDescPool;
 
-    m_State = D3D12_RESOURCE_STATE_COMMON;
-    m_SrvDescriptor = srvDescPool->get();
-    m_DsvDescriptor = dsvDescPool->get();
-    m_Format = format;
-    m_ClearDepthValue = 1.0f;
+    m_State             = D3D12_RESOURCE_STATE_COMMON;
+    m_SrvDescriptor     = srvDescPool->get();
+    m_DsvDescriptor     = dsvDescPool->get();
+    m_Format            = format;
+    m_ClearDepthValue   = 1.0f;
     m_ClearStencilValue = 0;
 
-    D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { m_Format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = {
+        m_Format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE
+    };
     if (FAILED(m_Device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport)))) {
         throw std::runtime_error("CheckFeatureSupport");
     }
@@ -56,67 +54,61 @@ void DxDepthStencilTexture::resize(size_t width, size_t height) {
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-    //D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(m_Format,
-      //  static_cast<UINT64>(width),
-        //static_cast<UINT>(height),
-        //1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    // D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(m_Format,
+    //   static_cast<UINT64>(width),
+    // static_cast<UINT>(height),
+    // 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
     D3D12_RESOURCE_DESC desc;
-    desc.Format = m_Format;
-    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    desc.Alignment = 0;
-    desc.Width = static_cast<UINT64>(width);
-    desc.Height = static_cast<UINT>(height);
-    desc.DepthOrArraySize = 1;
-    desc.MipLevels = 1;
-    desc.SampleDesc.Count = 1;
+    desc.Format             = m_Format;
+    desc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Alignment          = 0;
+    desc.Width              = static_cast<UINT64>(width);
+    desc.Height             = static_cast<UINT>(height);
+    desc.DepthOrArraySize   = 1;
+    desc.MipLevels          = 1;
+    desc.SampleDesc.Count   = 1;
     desc.SampleDesc.Quality = 0;
-    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    desc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    desc.Flags              = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     D3D12_CLEAR_VALUE clearValue;
-    clearValue.Format = m_Format;
-    clearValue.DepthStencil.Depth = m_ClearDepthValue;
+    clearValue.Format               = m_Format;
+    clearValue.DepthStencil.Depth   = m_ClearDepthValue;
     clearValue.DepthStencil.Stencil = m_ClearStencilValue;
 
     m_State = D3D12_RESOURCE_STATE_COMMON;
 
     // Create a render target
-    ThrowIfFailed(
-        m_Device->CreateCommittedResource(
-            &heapProperties,
-            D3D12_HEAP_FLAG_NONE,
-            &desc,
-            m_State,
-            &clearValue,
-            IID_PPV_ARGS(m_Resource.ReleaseAndGetAddressOf())
-        )
-    );
+    ThrowIfFailed(m_Device->CreateCommittedResource(
+        &heapProperties, D3D12_HEAP_FLAG_NONE, &desc, m_State, &clearValue,
+        IID_PPV_ARGS(m_Resource.ReleaseAndGetAddressOf())
+    ));
 
     // SetDebugObjectName(m_resource.Get(), L"DxDepthStencilTexture RT");
 
     // Create DSV.
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Format = m_Format;
-	dsvDesc.Texture2D.MipSlice = 0;
+    dsvDesc.Flags              = D3D12_DSV_FLAG_NONE;
+    dsvDesc.ViewDimension      = D3D12_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Format             = m_Format;
+    dsvDesc.Texture2D.MipSlice = 0;
 
     m_Device->CreateDepthStencilView(m_Resource.Get(), &dsvDesc, m_DsvDescriptor.cpu);
 
     // Create SRV.
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS; 
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-    srvDesc.Texture2D.PlaneSlice = 0;
+    srvDesc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format                          = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    srvDesc.ViewDimension                   = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip       = 0;
+    srvDesc.Texture2D.MipLevels             = 1;
+    srvDesc.Texture2D.ResourceMinLODClamp   = 0.0f;
+    srvDesc.Texture2D.PlaneSlice            = 0;
 
     m_Device->CreateShaderResourceView(m_Resource.Get(), &srvDesc, m_SrvDescriptor.cpu);
 
-    m_Width = width;
+    m_Width  = width;
     m_Height = height;
 }
 
@@ -139,19 +131,15 @@ void DxDepthStencilTexture::transitionTo(ID3D12GraphicsCommandList* commandList,
     }
 
     auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, afterState);
-	commandList->ResourceBarrier(1, &barrier);
+    commandList->ResourceBarrier(1, &barrier);
     m_State = afterState;
 }
 
 void DxDepthStencilTexture::clear(ID3D12GraphicsCommandList* commandList) {
     commandList->ClearDepthStencilView(
-        m_DsvDescriptor.cpu,
-        D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-        m_ClearDepthValue,
-        m_ClearStencilValue,
-        0,
-        nullptr
+        m_DsvDescriptor.cpu, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, m_ClearDepthValue, m_ClearStencilValue,
+        0, nullptr
     );
 }
 
-} // namespace Engine
+}  // namespace Engine

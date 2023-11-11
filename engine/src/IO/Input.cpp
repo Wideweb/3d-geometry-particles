@@ -8,8 +8,7 @@
 
 namespace Engine {
 
-Input *Input::create() {
-
+Input* Input::create() {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     return new WinInput();
 #elif __APPLE__ || __linux__ || __unix__ || defined(_POSIX_VERSION)
@@ -17,4 +16,4 @@ Input *Input::create() {
 #endif
 }
 
-} // namespace Engine
+}  // namespace Engine

@@ -9,12 +9,9 @@
 namespace Engine {
 
 OpenGLShaderProgram::OpenGLShaderProgram(
-    const std::string& vertexFile,
-    const std::string& pixelFile,
-    const std::vector<size_t>& dataSlots,
+    const std::string& vertexFile, const std::string& pixelFile, const std::vector<size_t>& dataSlots,
     const std::vector<std::string>& textureSlots
-) noexcept {  
-
+) noexcept {
     GLuint vertexShader = OpenGLUtils::compileShader(vertexFile, GL_VERTEX_SHADER);
     if (vertexShader == 0) {
         return;
@@ -67,17 +64,11 @@ OpenGLShaderProgram::OpenGLShaderProgram(
     }
 }
 
-OpenGLShaderProgram::~OpenGLShaderProgram() {
-    release();
-}
+OpenGLShaderProgram::~OpenGLShaderProgram() { release(); }
 
-void OpenGLShaderProgram::setDataSlot(size_t index, void* data) {
-    m_DataSlots[index]->copyData(data);
-}
+void OpenGLShaderProgram::setDataSlot(size_t index, void* data) { m_DataSlots[index]->copyData(data); }
 
-void OpenGLShaderProgram::setTextureSlot(size_t index, GLuint resource) {
-    m_TextureSlots[index].resource = resource;
-}
+void OpenGLShaderProgram::setTextureSlot(size_t index, GLuint resource) { m_TextureSlots[index].resource = resource; }
 
 void OpenGLShaderProgram::setTextureSlot(size_t index, std::shared_ptr<OpenGLRenderTexture> renderTexture) {
     setTextureSlot(index, renderTexture->getResource());
@@ -87,7 +78,7 @@ void OpenGLShaderProgram::bind() const {
     glUseProgram(m_ProgramId);
 
     for (size_t i = 0; i < m_DataSlots.size(); i++) {
-        glBindBufferBase(GL_UNIFORM_BUFFER, i, m_DataSlots[i]->getResource()); 
+        glBindBufferBase(GL_UNIFORM_BUFFER, i, m_DataSlots[i]->getResource());
     }
 
     for (size_t i = 0; i < m_TextureSlots.size(); i++) {
@@ -99,10 +90,8 @@ void OpenGLShaderProgram::bind() const {
     }
 }
 
-void OpenGLShaderProgram::unbind() const {
-    glUseProgram(0);
-}
-    
+void OpenGLShaderProgram::unbind() const { glUseProgram(0); }
+
 void OpenGLShaderProgram::release() {
     if (m_ProgramId > 0) {
         glDeleteProgram(m_ProgramId);
@@ -110,4 +99,4 @@ void OpenGLShaderProgram::release() {
     }
 }
 
-} // namespace Engine
+}  // namespace Engine

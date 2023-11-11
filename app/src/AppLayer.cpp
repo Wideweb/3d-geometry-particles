@@ -1,23 +1,20 @@
 #include "AppLayer.hpp"
 
-
-
+#include <algorithm>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
-
-#include <algorithm>
-#include <cmath>
 #include <unordered_map>
 
 void AppLayer::onAttach() {
-    auto &app = Engine::Application::get();
-    auto &camera = app.getCamera();
-    auto &render = app.getRender();
+    auto& app    = Engine::Application::get();
+    auto& camera = app.getCamera();
+    auto& render = app.getRender();
 
-    camera.setPosition(glm::vec3(3.0f, 1.5f, 3.0f));
-    camera.setRotation(glm::quat(glm::vec3(glm::radians(-25.0f), glm::radians(45.0f), 0.0f)));
+    camera.setPosition(glm::vec3(-24.0f, 12.0f, 24.0f));
+    camera.setRotation(glm::quat(glm::vec3(glm::radians(-25.0f), glm::radians(-45.0f), 0.0f)));
 
     render.beginInitialization();
 
@@ -27,7 +24,7 @@ void AppLayer::onAttach() {
     m_Effects.push_back(std::make_shared<CascadeShadowEffect>());
     m_Effects.push_back(std::make_shared<SkyboxEffect>());
 
-    for (auto& effect: m_Effects) {
+    for (auto& effect : m_Effects) {
         effect->bind();
     }
 
@@ -35,11 +32,11 @@ void AppLayer::onAttach() {
 }
 
 void AppLayer::onUpdate() {
-    auto &app = Engine::Application::get();
-    auto &camera = app.getCamera();
-    auto &time = app.getTime();
-    auto &input = app.getInput();
-    auto &cameraController = app.getCameraController();
+    auto& app              = Engine::Application::get();
+    auto& camera           = app.getCamera();
+    auto& time             = app.getTime();
+    auto& input            = app.getInput();
+    auto& cameraController = app.getCameraController();
 
     if (input.IsKeyPressed(Engine::KeyCode::W)) {
         glm::vec3 delta = glm::vec3(0.0, 0.0f, 0.5f);
@@ -71,21 +68,19 @@ void AppLayer::onUpdate() {
         cameraController.move(delta, 0.1);
     }
 
-    m_Time += 0.016f;
-
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -5.0f, -5.0f));
+    glm::vec3 lightDir  = glm::normalize(glm::vec3(-1.0f, -5.0f, -5.0f));
     glm::mat4 lightView = glm::lookAt(lightDir, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    m_CommonData.view = glm::transpose(camera.viewMatrix());
-    m_CommonData.projection = glm::transpose(camera.projectionMatrix());
-    m_CommonData.viewPos = camera.positionVec();
-    m_CommonData.ambientLight = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
-    m_CommonData.light.view = lightView;
+    m_CommonData.view            = glm::transpose(camera.viewMatrix());
+    m_CommonData.projection      = glm::transpose(camera.projectionMatrix());
+    m_CommonData.viewPos         = camera.positionVec();
+    m_CommonData.ambientLight    = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+    m_CommonData.light.view      = lightView;
     m_CommonData.light.direction = lightDir;
-    m_CommonData.light.strength = glm::vec3(1.0f);
-    m_CommonData.time = m_Time;
+    m_CommonData.light.strength  = glm::vec3(1.0f);
+    m_CommonData.time            = time.getTotalSeconds();
 
-    for (auto& effect: m_Effects) {
+    for (auto& effect : m_Effects) {
         effect->update(m_CommonData);
     }
 }
@@ -93,19 +88,19 @@ void AppLayer::onUpdate() {
 void AppLayer::onDraw() {
     m_CommonDataBuffer->copyData(&m_CommonData);
 
-    for (auto& effect: m_Effects) {
+    for (auto& effect : m_Effects) {
         effect->draw(m_CommonDataBuffer);
     }
 }
 
 void AppLayer::onDetach() {}
 
-void AppLayer::onMouseEvent(Engine::MouseEvent &event) {
-    auto &app = Engine::Application::get();
+void AppLayer::onMouseEvent(Engine::MouseEvent& event) {
+    auto& app = Engine::Application::get();
 
     if (!event.handled && event.type == Engine::EventType::MouseWheel) {
-        auto &camera = app.getCamera();
-        auto cameraRotation = camera.rotationQuat();
+        auto& camera         = app.getCamera();
+        auto  cameraRotation = camera.rotationQuat();
 
         float deltaX = event.x / 20;
         float deltaY = event.y / 20;

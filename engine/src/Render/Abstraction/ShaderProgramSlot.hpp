@@ -4,15 +4,11 @@
 
 namespace Engine {
 
-enum class SHADER_PROGRAM_SLOT_TYPE { 
-    DATA,
-    TEXTURE,
-    TEXTURE_ARRAY_4
-};
+enum class SHADER_PROGRAM_SLOT_TYPE { DATA, TEXTURE, TEXTURE_ARRAY_4 };
 
 struct ShaderProgramSlotDesc {
-    std::string name;
+    std::string              name;
     SHADER_PROGRAM_SLOT_TYPE type;
 };
 
-} // namespace Engine
+}  // namespace Engine

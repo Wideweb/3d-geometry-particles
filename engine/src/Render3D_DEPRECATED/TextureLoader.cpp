@@ -12,43 +12,43 @@
 #include "stb_image.hpp"
 #pragma GCC diagnostic pop
 
-#include "glad/glad.h"
-
 #include <cassert>
 #include <iostream>
 #include <vector>
+
+#include "glad/glad.h"
 
 namespace Engine {
 
 Texture TextureLoader::m_Placeholder;
 
-Texture TextureLoader::loadTexture(const std::string &path) {
+Texture TextureLoader::loadTexture(const std::string& path) {
     Texture texture;
-    int width, height, channels;
+    int     width, height, channels;
 
     stbi_set_flip_vertically_on_load(0);
 
-    unsigned char *data = stbi_load(path.data(), &width, &height, &channels, 0);
+    unsigned char* data = stbi_load(path.data(), &width, &height, &channels, 0);
 
     assert(data && "file not found.");
 
     GLenum internalFormat = 0, dataFormat = 0;
     if (channels == 4) {
         internalFormat = GL_RGBA8;
-        dataFormat = GL_RGBA;
+        dataFormat     = GL_RGBA;
     } else if (channels == 3) {
         internalFormat = GL_RGB8;
-        dataFormat = GL_RGB;
+        dataFormat     = GL_RGB;
     } else if (channels == 1) {
         internalFormat = GL_R8;
-        dataFormat = GL_RED;
+        dataFormat     = GL_RED;
     }
 
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
     GLint mipmapLevel = 0;
-    GLint border = 0;
+    GLint border      = 0;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -77,18 +77,18 @@ Texture TextureLoader::loadTexture(const std::string &path) {
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
 
-    texture.width = width;
+    texture.width  = width;
     texture.height = height;
-    texture.type = Texture::TextureType::COLOR;
+    texture.type   = Texture::TextureType::COLOR;
 
     if (internalFormat == GL_RGBA8) {
-        texture.format = Texture::InternalFormat::RGBA8F;
+        texture.format     = Texture::InternalFormat::RGBA8F;
         texture.dataFormat = Texture::DataFormat::RGBA;
     } else if (internalFormat == GL_RGB8) {
-        texture.format = Texture::InternalFormat::RGB8F;
+        texture.format     = Texture::InternalFormat::RGB8F;
         texture.dataFormat = Texture::DataFormat::RGB;
     } else if (internalFormat == GL_R8) {
-        texture.format = Texture::InternalFormat::R8F;
+        texture.format     = Texture::InternalFormat::R8F;
         texture.dataFormat = Texture::DataFormat::RED;
     }
     texture.dataType = Texture::DataType::UNSIGNED_BYTE;
@@ -96,4 +96,4 @@ Texture TextureLoader::loadTexture(const std::string &path) {
     return texture;
 }
 
-} // namespace Engine
+}  // namespace Engine

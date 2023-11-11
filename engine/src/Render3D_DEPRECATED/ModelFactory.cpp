@@ -1,19 +1,20 @@
 #include "ModelFactory.hpp"
 
-#include "Material.hpp"
-#include "Mesh.hpp"
-#include "Vertex.hpp"
-#include "TBN.hpp"
-
 #include <cmath>
 #include <numeric>
+
+#include "Material.hpp"
+#include "Mesh.hpp"
+#include "TBN.hpp"
+#include "Vertex.hpp"
 
 namespace Engine {
 
 std::shared_ptr<Model> ModelFactory::createCube(float size) { return createCube(size, size, size, size, size, size); }
 
-std::shared_ptr<Model> ModelFactory::createCube(float left, float right, float bottom, float top, float back,
-                                                float front) {
+std::shared_ptr<Model> ModelFactory::createCube(
+    float left, float right, float bottom, float top, float back, float front
+) {
     // clang-format off
     std::vector<glm::vec3> positions = {
         glm::vec3(-left, top, front), // 0
@@ -142,7 +143,7 @@ std::shared_ptr<Model> ModelFactory::createPlane(float tileSize, int columns, in
 
 std::shared_ptr<Model> ModelFactory::createCircle(float radius, int segments, float lineWidth, glm::vec3 color) {
     float dAngle = 2.0f * 3.1415926f / static_cast<float>(segments);
-    float angle = 0.0f;
+    float angle  = 0.0f;
 
     std::vector<glm::vec2> corclePoints;
     corclePoints.reserve(segments);
@@ -151,17 +152,17 @@ std::shared_ptr<Model> ModelFactory::createCircle(float radius, int segments, fl
         angle += dAngle;
     }
 
-    std::vector<Vertex> vertices;
+    std::vector<Vertex>       vertices;
     std::vector<unsigned int> indices;
 
     for (int i = 0; i < segments + 1; i++) {
-        glm::vec2 prev = corclePoints[(i + segments - 1) % segments];
+        glm::vec2 prev  = corclePoints[(i + segments - 1) % segments];
         glm::vec2 point = corclePoints[i % segments];
-        glm::vec2 next = corclePoints[(i + 1) % segments];
+        glm::vec2 next  = corclePoints[(i + 1) % segments];
 
         glm::vec2 prevNormal = glm::vec2(point.y - prev.y, prev.x - point.x);
         glm::vec2 nextNormal = glm::vec2(next.y - point.y, point.x - next.x);
-        glm::vec2 normal = glm::normalize(prevNormal + nextNormal);
+        glm::vec2 normal     = glm::normalize(prevNormal + nextNormal);
 
         glm::vec2 v0 = point - normal * lineWidth * 0.5f;
         glm::vec2 v1 = point + normal * lineWidth * 0.5f;
@@ -174,14 +175,18 @@ std::shared_ptr<Model> ModelFactory::createCircle(float radius, int segments, fl
             uv1.y = 1.0f;
         }
 
-        vertices.emplace_back(glm::vec3(v0, lineWidth * 0.5f), glm::vec3(0.0f), uv0, glm::vec3(0.0f), glm::vec3(0.0f),
-                              color);
-        vertices.emplace_back(glm::vec3(v1, lineWidth * 0.5f), glm::vec3(0.0f), uv1, glm::vec3(0.0f), glm::vec3(0.0f),
-                              color);
-        vertices.emplace_back(glm::vec3(v0, lineWidth * -0.5f), glm::vec3(0.0f), uv0, glm::vec3(0.0f), glm::vec3(0.0f),
-                              color);
-        vertices.emplace_back(glm::vec3(v1, lineWidth * -0.5f), glm::vec3(0.0f), uv1, glm::vec3(0.0f), glm::vec3(0.0f),
-                              color);
+        vertices.emplace_back(
+            glm::vec3(v0, lineWidth * 0.5f), glm::vec3(0.0f), uv0, glm::vec3(0.0f), glm::vec3(0.0f), color
+        );
+        vertices.emplace_back(
+            glm::vec3(v1, lineWidth * 0.5f), glm::vec3(0.0f), uv1, glm::vec3(0.0f), glm::vec3(0.0f), color
+        );
+        vertices.emplace_back(
+            glm::vec3(v0, lineWidth * -0.5f), glm::vec3(0.0f), uv0, glm::vec3(0.0f), glm::vec3(0.0f), color
+        );
+        vertices.emplace_back(
+            glm::vec3(v1, lineWidth * -0.5f), glm::vec3(0.0f), uv1, glm::vec3(0.0f), glm::vec3(0.0f), color
+        );
 
         // Front
         indices.push_back((i % segments) * 4 + 0);
@@ -228,8 +233,9 @@ std::shared_ptr<Model> ModelFactory::createCircle(float radius, int segments, fl
     return model;
 }
 
-std::shared_ptr<Model> ModelFactory::createFrastum(float fieldOfView, float nearPlane, float farPlane,
-                                                   glm::vec3 color) {
+std::shared_ptr<Model> ModelFactory::createFrastum(
+    float fieldOfView, float nearPlane, float farPlane, glm::vec3 color
+) {
     float tangent = std::tanf(fieldOfView / 2.0f);
 
     float fronDelta = nearPlane * tangent;
@@ -238,24 +244,40 @@ std::shared_ptr<Model> ModelFactory::createFrastum(float fieldOfView, float near
     std::vector<Vertex> vertices;
 
     // Front
-    vertices.emplace_back(glm::vec3(-fronDelta, -fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(-fronDelta, fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(0.0f, 1.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(fronDelta, fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(1.0f, 1.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(fronDelta, -fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
+    vertices.emplace_back(
+        glm::vec3(-fronDelta, -fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(-fronDelta, fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(fronDelta, fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(fronDelta, -fronDelta, nearPlane), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
 
     // Back
-    vertices.emplace_back(glm::vec3(-backDelta, -backDelta, farPlane), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(-backDelta, backDelta, farPlane), glm::vec3(0.0f), glm::vec2(0.0f, 1.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(backDelta, backDelta, farPlane), glm::vec3(0.0f), glm::vec2(1.0f, 1.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
-    vertices.emplace_back(glm::vec3(backDelta, -backDelta, farPlane), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f),
-                          glm::vec3(0.0f), glm::vec3(0.0f), color);
+    vertices.emplace_back(
+        glm::vec3(-backDelta, -backDelta, farPlane), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(-backDelta, backDelta, farPlane), glm::vec3(0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(backDelta, backDelta, farPlane), glm::vec3(0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
+    vertices.emplace_back(
+        glm::vec3(backDelta, -backDelta, farPlane), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f),
+        glm::vec3(0.0f), color
+    );
 
     std::vector<unsigned int> indices;
 
@@ -321,4 +343,4 @@ std::shared_ptr<Model> ModelFactory::createFrastum(float fieldOfView, float near
     return model;
 }
 
-} // namespace Engine
+}  // namespace Engine

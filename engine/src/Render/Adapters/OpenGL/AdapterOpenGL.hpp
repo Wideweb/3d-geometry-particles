@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CrossPlatformRender.hpp"
+#include "OpenGLFramebuffer.hpp"
+#include "OpenGLRenderPass.hpp"
 #include "OpenGLRenderTexture.hpp"
 #include "OpenGLShaderProgram.hpp"
-#include "OpenGLRenderPass.hpp"
-#include "OpenGLFramebuffer.hpp"
 
 namespace Engine {
 
@@ -13,10 +13,10 @@ namespace Engine {
 ////////////////////////////////////////////////////////////////////////////
 unsigned int getOpenGLTextureFormat(CROSS_PLATFROM_TEXTURE_FORMATS format) {
     switch (format) {
-    case CROSS_PLATFROM_TEXTURE_FORMATS::RGBA8:
-        return GL_RGBA8;
-    default:
-        throw std::invalid_argument("GfxImage::getOpenGLTextureFormat: invalid internal format.");
+        case CROSS_PLATFROM_TEXTURE_FORMATS::RGBA8:
+            return GL_RGBA8;
+        default:
+            throw std::invalid_argument("GfxImage::getOpenGLTextureFormat: invalid internal format.");
     }
 }
 
@@ -25,9 +25,7 @@ unsigned int getOpenGLTextureFormat(CROSS_PLATFROM_TEXTURE_FORMATS format) {
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLTextureWrapper : public CrossPlatformTexture {
 public:
-    OpenGLTextureWrapper(std::shared_ptr<OpenGLTexture> nativeTexture) {
-        m_NativeTexture = nativeTexture;
-    }
+    OpenGLTextureWrapper(std::shared_ptr<OpenGLTexture> nativeTexture) { m_NativeTexture = nativeTexture; }
 
     std::shared_ptr<OpenGLTexture> getNative() { return m_NativeTexture; }
 
@@ -40,13 +38,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLRenderTextureWrapper : public CrossPlatformRenderTexture {
 public:
-    OpenGLRenderTextureWrapper(std::shared_ptr<OpenGLRenderTexture> nativeRT) {
-        m_NativeRT = nativeRT;
-    }
+    OpenGLRenderTextureWrapper(std::shared_ptr<OpenGLRenderTexture> nativeRT) { m_NativeRT = nativeRT; }
 
-    void resize(size_t width, size_t height) override {
-        m_NativeRT->resize(width, height);
-    }
+    void resize(size_t width, size_t height) override { m_NativeRT->resize(width, height); }
 
     std::shared_ptr<OpenGLRenderTexture> getNative() { return m_NativeRT; }
 
@@ -59,13 +53,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLDepthStencilTextureWrapper : public CrossPlatformDepthStencilTexture {
 public:
-    OpenGLDepthStencilTextureWrapper(std::shared_ptr<OpenGLDepthStencilTexture> nativeRT) {
-        m_NativeRT = nativeRT;
-    }
+    OpenGLDepthStencilTextureWrapper(std::shared_ptr<OpenGLDepthStencilTexture> nativeRT) { m_NativeRT = nativeRT; }
 
-    void resize(size_t width, size_t height) override {
-        nativeRT->resize(width, height);
-    }
+    void resize(size_t width, size_t height) override { nativeRT->resize(width, height); }
 
     std::shared_ptr<OpenGLDepthStencilTexture> getNative() { return m_NativeRT; }
 
@@ -78,13 +68,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLShaderProgramWrapper : public CrossPlatformShaderProgram {
 public:
-    OpenGLShaderProgramWrapper(std::shared_ptr<OpenGLShaderProgram> nativeSP) noexcept {
-        m_NativeSP = nativeSP;
-    }
+    OpenGLShaderProgramWrapper(std::shared_ptr<OpenGLShaderProgram> nativeSP) noexcept { m_NativeSP = nativeSP; }
 
-    void setDataSlot(size_t index, void* data) override {
-        m_NativeSP->setDataSlot(index, data);
-    }
+    void setDataSlot(size_t index, void* data) override { m_NativeSP->setDataSlot(index, data); }
 
     void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) override {
         auto textureWrapper = std::static_pointer_cast<OpenGLRenderTextureWrapper>(texture);
@@ -98,11 +84,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// RENDER PASS ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-class OpenGLRenderPassWrapper : CrossPlatformRenderPass { 
+class OpenGLRenderPassWrapper : CrossPlatformRenderPass {
 public:
-    OpenGLRenderPassWrapper(std::shared_ptr<OpenGLRenderPass> nativeRP) noexcept {
-        m_NativeRP = nativeRP;
-    }
+    OpenGLRenderPassWrapper(std::shared_ptr<OpenGLRenderPass> nativeRP) noexcept { m_NativeRP = nativeRP; }
 
     std::shared_ptr<OpenGLRenderPass> getNative() { return m_NativeRP; }
 
@@ -115,9 +99,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////
 class OpenGLFramebufferWrapper : public CrossPlatformFramebuffer {
 public:
-    OpenGLFramebufferWrapper(std::shared_ptr<OpenGLFramebuffer> nativeFB) noexcept {
-        m_NativeFB = nativeFB;
-    }
+    OpenGLFramebufferWrapper(std::shared_ptr<OpenGLFramebuffer> nativeFB) noexcept { m_NativeFB = nativeFB; }
 
     void addAttachment(std::shared_ptr<CrossPlatformRenderTexture> attachment) override {
         auto textureWrapper = std::static_pointer_cast<OpenGLRenderTextureWrapper>(attachment);
@@ -133,9 +115,7 @@ public:
         m_DSAttachment = attachment;
     }
 
-    void resize(size_t width, size_t height) override {
-        m_NativeFB->resize(width, height);
-    }
+    void resize(size_t width, size_t height) override { m_NativeFB->resize(width, height); }
 
     const std::vector<std::shared_ptr<CrossPlatformRenderTexture>>& getAttachments() const noexcept override {
         return m_Attachments;
@@ -146,9 +126,9 @@ public:
     }
 
 private:
-    std::shared_ptr<OpenGLFramebuffer>                         m_NativeFB;
-    std::vector<std::shared_ptr<CrossPlatformRenderTexture>>   m_Attachments;
-    std::shared_ptr<CrossPlatformDepthStencilTexture>          m_DSAttachment;
+    std::shared_ptr<OpenGLFramebuffer>                       m_NativeFB;
+    std::vector<std::shared_ptr<CrossPlatformRenderTexture>> m_Attachments;
+    std::shared_ptr<CrossPlatformDepthStencilTexture>        m_DSAttachment;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -162,29 +142,17 @@ public:
 
     virtual ~OpenGLPlatformRenderWrapper() = default;
 
-    void beginInitialization() override {
+    void beginInitialization() override {}
 
-    }
+    void endInitialization() override {}
 
-    void endInitialization() override {
-        
-    }
+    void beginFrame() override { m_NativeRender->beginFrame(); }
 
-    void beginFrame() override {
-        m_NativeRender->beginFrame();
-    }
+    void endFrame() override { m_NativeRender->endFrame(); }
 
-    void endFrame() override {
-        m_NativeRender->endFrame();
-    }
+    void resize(uint32_t width, uint32_t height) override { m_NativeRender->resize(width, height); }
 
-    void resize(uint32_t width, uint32_t height) override {
-        m_NativeRender->resize(width, height);
-    }
-
-    void clear(float r, float g, float b, float a) override {
-        m_NativeRender->clear(r, g, b, a);
-    }
+    void clear(float r, float g, float b, float a) override { m_NativeRender->clear(r, g, b, a); }
 
     void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
         auto passWrapper = std::static_pointer_cast<OpenGLRenderPassWrapper>(pass);
@@ -196,7 +164,9 @@ public:
         m_NativeRender->setFramebuffer(fbWrapper->getNative());
     }
 
-    void registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) override {
+    void registerGeometry(
+        const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes
+    ) override {
         m_NativeRender->registerGeometry(geometry, subGeometries, subMeshes);
     }
 
@@ -210,7 +180,9 @@ public:
         return std::shared_ptr<OpenGLDepthStencilTextureWrapper>(nativeDSTexture);
     }
 
-    std::shared_ptr<CrossPlatformRenderTexture> createRenderTexture(CROSS_PLATFROM_TEXTURE_FORMATS format, size_t width, size_t height) override {
+    std::shared_ptr<CrossPlatformRenderTexture> createRenderTexture(
+        CROSS_PLATFROM_TEXTURE_FORMATS format, size_t width, size_t height
+    ) override {
         auto nativeRT = std::make_shared<OpenGLRenderTexture>(getOpenGLTextureFormat(format), GL_FLOAT, width, height);
         return std::shared_ptr<OpenGLRenderTextureWrapper>(nativeRT);
     }
@@ -243,4 +215,4 @@ private:
     std::shared_ptr<OpenGLRender> m_NativeRender;
 };
 
-} // namespace Engine
+}  // namespace Engine

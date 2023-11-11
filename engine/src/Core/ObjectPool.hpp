@@ -6,24 +6,25 @@
 
 namespace Engine {
 
-template <typename TEvent, size_t TSize> class ObjectPool {
-  public:
+template <typename TEvent, size_t TSize>
+class ObjectPool {
+public:
     void push(TEvent event) {
         m_Data[tail] = event;
-        tail = (tail + 1) % TSize;
+        tail         = (tail + 1) % TSize;
     }
 
     TEvent pop() {
-        auto &event = m_Data[index];
-        index = (index + 1) % TSize;
+        auto& event = m_Data[index];
+        index       = (index + 1) % TSize;
         return event;
     }
 
     bool empty() const { return index == tail; }
 
-  private:
+private:
     std::array<TEvent, TSize> m_Data;
-    size_t index, tail = 0;
+    size_t                    index, tail = 0;
 };
 
-} // namespace Engine
+}  // namespace Engine

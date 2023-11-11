@@ -1,18 +1,18 @@
 #include "DxTextureLoader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.hpp"
-
 #include <iostream>
+
+#include "stb_image.hpp"
 
 namespace Engine {
 
-Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(ID3D12Device *device,
-                                                                            ID3D12GraphicsCommandList *commandList,
-                                                                            const std::string &filename) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(
+    ID3D12Device* device, ID3D12GraphicsCommandList* commandList, const std::string& filename
+) {
     // Загрузка изображения с помощью библиотеки stb_image
-    int width, height, channels;
-    unsigned char *imageData = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    int            width, height, channels;
+    unsigned char* imageData = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
     if (!imageData) {
         std::cout << "ERROR::TEXTURE::Failed to load texture from file: " << filename << std::endl;
@@ -22,12 +22,13 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(ID3D
     // Создание ресурса текстуры на GPU
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource;
 
-    CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1);
+    CD3DX12_RESOURCE_DESC   textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1);
     CD3DX12_HEAP_PROPERTIES textureHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 
-    HRESULT hr = device->CreateCommittedResource(&textureHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc,
-                                                 D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                                                 IID_PPV_ARGS(textureResource.GetAddressOf()));
+    HRESULT hr = device->CreateCommittedResource(
+        &textureHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+        IID_PPV_ARGS(textureResource.GetAddressOf())
+    );
 
     if (FAILED(hr)) {
         std::cout << "ERROR::TEXTURE::Failed to create texture resource." << std::endl;
@@ -38,11 +39,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(ID3D
     Microsoft::WRL::ComPtr<ID3D12Resource> textureUploadHeap = nullptr;
 
     CD3DX12_HEAP_PROPERTIES textureUploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-    CD3DX12_RESOURCE_DESC textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(width * height * 4);
+    CD3DX12_RESOURCE_DESC   textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(width * height * 4);
 
-    hr = device->CreateCommittedResource(&textureUploadHeapProperties, D3D12_HEAP_FLAG_NONE, &textureUploadDesc,
-                                         D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                                         IID_PPV_ARGS(textureUploadHeap.GetAddressOf()));
+    hr = device->CreateCommittedResource(
+        &textureUploadHeapProperties, D3D12_HEAP_FLAG_NONE, &textureUploadDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+        IID_PPV_ARGS(textureUploadHeap.GetAddressOf())
+    );
 
     if (FAILED(hr)) {
         std::cout << "ERROR::TEXTURE::Failed to create texture upload heap." << std::endl;
@@ -50,35 +52,37 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DxTextureLoader::loadTextureFromFile(ID3D
     }
 
     D3D12_SUBRESOURCE_DATA textureDataDesc = {};
-    textureDataDesc.pData = imageData;
-    textureDataDesc.RowPitch = width * 4;
-    textureDataDesc.SlicePitch = textureDataDesc.RowPitch * height;
+    textureDataDesc.pData                  = imageData;
+    textureDataDesc.RowPitch               = width * 4;
+    textureDataDesc.SlicePitch             = textureDataDesc.RowPitch * height;
 
     UpdateSubresources<1>(commandList, textureResource.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureDataDesc);
 
     // Установка состояния ресурса текстуры на GPU
     CD3DX12_RESOURCE_BARRIER textureBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+    );
 
     commandList->ResourceBarrier(1, &textureBarrier);
 
     return textureResource;
 }
 
-void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12GraphicsCommandList *commandList,
-                                              const std::array<std::string, 6> &files,
-                                              Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
-                                              Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap) {
+void DxTextureLoader::loadCubeMapDataFromFile(
+    ID3D12Device* device, ID3D12GraphicsCommandList* commandList, const std::array<std::string, 6>& files,
+    Microsoft::WRL::ComPtr<ID3D12Resource>& textureResource, Microsoft::WRL::ComPtr<ID3D12Resource>& textureUploadHeap
+) {
     HRESULT hr;
 
     D3D12_RESOURCE_DESC textureDesc;
 
     std::vector<D3D12_SUBRESOURCE_DATA> subresources;
     for (int i = 0; i < 6; i++) {
-        BYTE *imageData;
-        int imageBytesPerRow;
-        int imageSize = DxTextureLoader::loadImageDataFromFile(
-            &imageData, textureDesc, DxUtils::AnsiToWString(files[i]).c_str(), imageBytesPerRow);
+        BYTE* imageData;
+        int   imageBytesPerRow;
+        int   imageSize = DxTextureLoader::loadImageDataFromFile(
+            &imageData, textureDesc, DxUtils::AnsiToWString(files[i]).c_str(), imageBytesPerRow
+        );
         // make sure we have data
         if (imageSize <= 0) {
             std::cout << "Image has no size -ERROR:" << std::endl;
@@ -87,9 +91,9 @@ void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12Graphi
 
         // store texture buffer in upload heap
         D3D12_SUBRESOURCE_DATA textureData = {};
-        textureData.pData = &imageData[0];                              // pointer to our image data
-        textureData.RowPitch = imageBytesPerRow;                        // size of all our triangle vertex data
-        textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; // also the size of our triangle vertex data
+        textureData.pData                  = &imageData[0];              // pointer to our image data
+        textureData.RowPitch               = imageBytesPerRow;           // size of all our triangle vertex data
+        textureData.SlicePitch = imageBytesPerRow * textureDesc.Height;  // also the size of our triangle vertex data
 
         subresources.push_back(textureData);
     }
@@ -101,13 +105,14 @@ void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12Graphi
     textureDesc.DepthOrArraySize = 6;
 
     hr = device->CreateCommittedResource(
-        &textureHeapProperties, // a default heap
-        D3D12_HEAP_FLAG_NONE,   // no flags
-        &textureDesc,           // the description of our texture
+        &textureHeapProperties,  // a default heap
+        D3D12_HEAP_FLAG_NONE,    // no flags
+        &textureDesc,            // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST,
         // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-        nullptr, // used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(textureResource.GetAddressOf()));
+        nullptr,  // used for render targets and depth/stencil buffers
+        IID_PPV_ARGS(textureResource.GetAddressOf())
+    );
     if (FAILED(hr)) {
         std::cout << "Error create default heap in LoadTexture -ERROR:" + std::to_string(hr) << std::endl;
         return;
@@ -126,15 +131,16 @@ void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12Graphi
     textureUploadHeap.Reset();
 
     CD3DX12_HEAP_PROPERTIES textureUploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-    CD3DX12_RESOURCE_DESC textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
+    CD3DX12_RESOURCE_DESC   textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
 
     hr = device->CreateCommittedResource(
-        &textureUploadHeapProperties, // upload heap
-        D3D12_HEAP_FLAG_NONE,         // no flags
+        &textureUploadHeapProperties,  // upload heap
+        D3D12_HEAP_FLAG_NONE,          // no flags
         &textureUploadDesc,
         // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
-        D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
-        nullptr, IID_PPV_ARGS(textureUploadHeap.GetAddressOf()));
+        D3D12_RESOURCE_STATE_GENERIC_READ,  // We will copy the contents from this heap to the default heap above
+        nullptr, IID_PPV_ARGS(textureUploadHeap.GetAddressOf())
+    );
     if (FAILED(hr)) {
         std::cout << "Error create upload heap in LoadTexture -ERROR:" << std::to_string(hr) << std::endl;
         return;
@@ -147,22 +153,24 @@ void DxTextureLoader::loadCubeMapDataFromFile(ID3D12Device *device, ID3D12Graphi
     // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel
     // shader to get the color of pixels)
     CD3DX12_RESOURCE_BARRIER textureBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+    );
 
     commandList->ResourceBarrier(1, &textureBarrier);
 }
 
-void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12GraphicsCommandList *commandList,
-                                            const std::string &filename,
-                                            Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource,
-                                            Microsoft::WRL::ComPtr<ID3D12Resource> &textureUploadHeap) {
+void DxTextureLoader::loadImageDataFromFile(
+    ID3D12Device* device, ID3D12GraphicsCommandList* commandList, const std::string& filename,
+    Microsoft::WRL::ComPtr<ID3D12Resource>& textureResource, Microsoft::WRL::ComPtr<ID3D12Resource>& textureUploadHeap
+) {
     HRESULT hr;
     // Load the image from file
-    BYTE *imageData;
+    BYTE*               imageData;
     D3D12_RESOURCE_DESC textureDesc;
-    int imageBytesPerRow;
-    int imageSize = DxTextureLoader::loadImageDataFromFile(&imageData, textureDesc,
-                                                           DxUtils::AnsiToWString(filename).c_str(), imageBytesPerRow);
+    int                 imageBytesPerRow;
+    int                 imageSize = DxTextureLoader::loadImageDataFromFile(
+        &imageData, textureDesc, DxUtils::AnsiToWString(filename).c_str(), imageBytesPerRow
+    );
     // make sure we have data
     if (imageSize <= 0) {
         std::cout << "Image has no size -ERROR:" << std::endl;
@@ -175,13 +183,14 @@ void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12Graphics
     CD3DX12_HEAP_PROPERTIES textureHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 
     hr = device->CreateCommittedResource(
-        &textureHeapProperties, // a default heap
-        D3D12_HEAP_FLAG_NONE,   // no flags
-        &textureDesc,           // the description of our texture
+        &textureHeapProperties,  // a default heap
+        D3D12_HEAP_FLAG_NONE,    // no flags
+        &textureDesc,            // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST,
         // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-        nullptr, // used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(textureResource.GetAddressOf()));
+        nullptr,  // used for render targets and depth/stencil buffers
+        IID_PPV_ARGS(textureResource.GetAddressOf())
+    );
     if (FAILED(hr)) {
         std::cout << "Error create default heap in LoadTexture -ERROR:" + std::to_string(hr) << std::endl;
         return;
@@ -200,15 +209,16 @@ void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12Graphics
     textureUploadHeap.Reset();
 
     CD3DX12_HEAP_PROPERTIES textureUploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-    CD3DX12_RESOURCE_DESC textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
+    CD3DX12_RESOURCE_DESC   textureUploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
 
     hr = device->CreateCommittedResource(
-        &textureUploadHeapProperties, // upload heap
-        D3D12_HEAP_FLAG_NONE,         // no flags
+        &textureUploadHeapProperties,  // upload heap
+        D3D12_HEAP_FLAG_NONE,          // no flags
         &textureUploadDesc,
         // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
-        D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
-        nullptr, IID_PPV_ARGS(textureUploadHeap.GetAddressOf()));
+        D3D12_RESOURCE_STATE_GENERIC_READ,  // We will copy the contents from this heap to the default heap above
+        nullptr, IID_PPV_ARGS(textureUploadHeap.GetAddressOf())
+    );
     if (FAILED(hr)) {
         std::cout << "Error create upload heap in LoadTexture -ERROR:" << std::to_string(hr) << std::endl;
         return;
@@ -217,9 +227,9 @@ void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12Graphics
 
     // store texture buffer in upload heap
     D3D12_SUBRESOURCE_DATA textureData = {};
-    textureData.pData = &imageData[0];                              // pointer to our image data
-    textureData.RowPitch = imageBytesPerRow;                        // size of all our triangle vertex data
-    textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; // also the size of our triangle vertex data
+    textureData.pData                  = &imageData[0];              // pointer to our image data
+    textureData.RowPitch               = imageBytesPerRow;           // size of all our triangle vertex data
+    textureData.SlicePitch = imageBytesPerRow * textureDesc.Height;  // also the size of our triangle vertex data
 
     // Now we copy the upload buffer contents to the default heap
     UpdateSubresources(commandList, textureResource.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
@@ -227,23 +237,25 @@ void DxTextureLoader::loadImageDataFromFile(ID3D12Device *device, ID3D12Graphics
     // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel
     // shader to get the color of pixels)
     CD3DX12_RESOURCE_BARRIER textureBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        textureResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+    );
 
     commandList->ResourceBarrier(1, &textureBarrier);
 }
 
 // load and decode image from file
-int DxTextureLoader::loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC &resourceDescription, LPCWSTR filename,
-                                           int &bytesPerRow) {
+int DxTextureLoader::loadImageDataFromFile(
+    BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow
+) {
     HRESULT hr;
 
     // we only need one instance of the imaging factory to create decoders and frames
-    static IWICImagingFactory *wicFactory;
+    static IWICImagingFactory* wicFactory;
 
     // reset decoder, frame and converter since these will be different for each image we load
-    IWICBitmapDecoder *wicDecoder = nullptr;
-    IWICBitmapFrameDecode *wicFrame = nullptr;
-    IWICFormatConverter *wicConverter = nullptr;
+    IWICBitmapDecoder*     wicDecoder   = nullptr;
+    IWICBitmapFrameDecode* wicFrame     = nullptr;
+    IWICFormatConverter*   wicConverter = nullptr;
 
     bool imageConverted = false;
 
@@ -259,12 +271,12 @@ int DxTextureLoader::loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC
 
     // load a decoder for the image
     hr = wicFactory->CreateDecoderFromFilename(
-        filename,                     // Image we want to load in
-        nullptr,                      // This is a vendor ID, we do not prefer a specific one so set to null
-        GENERIC_READ,                 // We want to read from this file
-        WICDecodeMetadataCacheOnLoad, // We will cache the metadata right away, rather than when needed, which might be
-                                      // unknown
-        &wicDecoder                   // the wic decoder to be created
+        filename,                      // Image we want to load in
+        nullptr,                       // This is a vendor ID, we do not prefer a specific one so set to null
+        GENERIC_READ,                  // We want to read from this file
+        WICDecodeMetadataCacheOnLoad,  // We will cache the metadata right away, rather than when needed, which might be
+                                       // unknown
+        &wicDecoder                    // the wic decoder to be created
     );
     if (FAILED(hr))
         return 0;
@@ -311,13 +323,14 @@ int DxTextureLoader::loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC
 
         // make sure we can convert to the dxgi compatible format
         BOOL canConvert = FALSE;
-        hr = wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert);
+        hr              = wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert);
         if (FAILED(hr) || !canConvert)
             return 0;
 
         // do the conversion (wicConverter will contain the converted image)
-        hr = wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0,
-                                      WICBitmapPaletteTypeCustom);
+        hr = wicConverter->Initialize(
+            wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom
+        );
         if (FAILED(hr))
             return 0;
 
@@ -325,12 +338,12 @@ int DxTextureLoader::loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC
         imageConverted = true;
     }
 
-    int bitsPerPixel = getDXGIFormatBitsPerPixel(dxgiFormat); // number of bits per pixel
-    bytesPerRow = (textureWidth * bitsPerPixel) / 8;          // number of bytes in each row of the image data
-    int imageSize = bytesPerRow * textureHeight;              // total image size in bytes
+    int bitsPerPixel = getDXGIFormatBitsPerPixel(dxgiFormat);  // number of bits per pixel
+    bytesPerRow      = (textureWidth * bitsPerPixel) / 8;      // number of bytes in each row of the image data
+    int imageSize    = bytesPerRow * textureHeight;            // total image size in bytes
 
     // allocate enough memory for the raw image data, and set imageData to point to that memory
-    *imageData = (BYTE *)malloc(imageSize);
+    *imageData = (BYTE*)malloc(imageSize);
 
     // copy (decoded) raw image data into the newly allocated memory (imageData)
     if (imageConverted) {
@@ -346,30 +359,30 @@ int DxTextureLoader::loadImageDataFromFile(BYTE **imageData, D3D12_RESOURCE_DESC
     }
 
     // now describe the texture with the information we have obtained from the image
-    resourceDescription = {};
+    resourceDescription           = {};
     resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resourceDescription.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB
-                                       // (4MB for multi-sampled textures)
-    resourceDescription.Width = textureWidth;   // width of the texture
-    resourceDescription.Height = textureHeight; // height of the texture
-    resourceDescription.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures
-                                              // (we only have one image, so we set 1)
+    resourceDescription.Alignment = 0;  // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB
+                                        // (4MB for multi-sampled textures)
+    resourceDescription.Width            = textureWidth;   // width of the texture
+    resourceDescription.Height           = textureHeight;  // height of the texture
+    resourceDescription.DepthOrArraySize = 1;  // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D
+                                               // textures (we only have one image, so we set 1)
     resourceDescription.MipLevels =
-        1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
-    resourceDescription.Format = dxgiFormat;  // This is the dxgi format of the image (format of the pixels)
-    resourceDescription.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
+        1;  // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
+    resourceDescription.Format           = dxgiFormat;  // This is the dxgi format of the image (format of the pixels)
+    resourceDescription.SampleDesc.Count = 1;  // This is the number of samples per pixel, we just want 1 sample
     resourceDescription.SampleDesc.Quality =
-        0; // The quality level of the samples. Higher is better quality, but worse performance
-    resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets
-                                                               // the driver choose the most efficient one
-    resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE;      // no flags
+        0;  // The quality level of the samples. Higher is better quality, but worse performance
+    resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;  // The arrangement of the pixels. Setting to unknown
+                                                                // lets the driver choose the most efficient one
+    resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE;       // no flags
 
     // return the size of the image. remember to delete the image once your done with it (in this tutorial once its
     // uploaded to the gpu)
     return imageSize;
 }
 
-DXGI_FORMAT DxTextureLoader::getDXGIFormatFromWICFormat(WICPixelFormatGUID &wic_format_guid) {
+DXGI_FORMAT DxTextureLoader::getDXGIFormatFromWICFormat(WICPixelFormatGUID& wic_format_guid) {
     if (wic_format_guid == GUID_WICPixelFormat128bppRGBAFloat)
         return DXGI_FORMAT_R32G32B32A32_FLOAT;
     if (wic_format_guid == GUID_WICPixelFormat64bppRGBAHalf)
@@ -404,7 +417,7 @@ DXGI_FORMAT DxTextureLoader::getDXGIFormatFromWICFormat(WICPixelFormatGUID &wic_
 }
 
 // get a dxgi compatible wic format from another wic format
-WICPixelFormatGUID DxTextureLoader::getConvertToWICFormat(WICPixelFormatGUID &wic_format_guid) {
+WICPixelFormatGUID DxTextureLoader::getConvertToWICFormat(WICPixelFormatGUID& wic_format_guid) {
     if (wic_format_guid == GUID_WICPixelFormatBlackWhite)
         return GUID_WICPixelFormat8bppGray;
     if (wic_format_guid == GUID_WICPixelFormat1bppIndexed)
@@ -490,7 +503,7 @@ WICPixelFormatGUID DxTextureLoader::getConvertToWICFormat(WICPixelFormatGUID &wi
 }
 
 // get the number of bits per pixel for a dxgi format
-int DxTextureLoader::getDXGIFormatBitsPerPixel(DXGI_FORMAT &dxgi_format) {
+int DxTextureLoader::getDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgi_format) {
     if (dxgi_format == DXGI_FORMAT_R32G32B32A32_FLOAT)
         return 128;
     if (dxgi_format == DXGI_FORMAT_R16G16B16A16_FLOAT)
@@ -525,4 +538,4 @@ int DxTextureLoader::getDXGIFormatBitsPerPixel(DXGI_FORMAT &dxgi_format) {
     }
 }
 
-} // namespace Engine
+}  // namespace Engine

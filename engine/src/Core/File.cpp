@@ -2,14 +2,14 @@
 
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
-#include <regex>
 #include <iterator>
+#include <regex>
+#include <stdexcept>
 
 namespace Engine {
 
-std::string File::read(const std::string &path) {
-    std::string result;
+std::string File::read(const std::string& path) {
+    std::string   result;
     std::ifstream in(path, std::ios_base::binary);
 
     if (!in) {
@@ -37,7 +37,7 @@ std::string File::read(const std::string &path) {
 std::string File::readGLSL(const std::string& path, const std::string& srcDir) {
     std::string sourceCode = File::read(path);
 
-    std::regex includePattern("#include\\s+\"(.+)\"");
+    std::regex  includePattern("#include\\s+\"(.+)\"");
     std::smatch matches;
 
     while (std::regex_search(sourceCode, matches, includePattern)) {
@@ -46,7 +46,7 @@ std::string File::readGLSL(const std::string& path, const std::string& srcDir) {
             return "";
         }
 
-        std::string includePath = srcDir + matches[1].str();
+        std::string includePath  = srcDir + matches[1].str();
         std::string srcToInclude = File::read(includePath);
 
         sourceCode.replace(matches.position(), matches[0].length(), srcToInclude);
@@ -55,7 +55,7 @@ std::string File::readGLSL(const std::string& path, const std::string& srcDir) {
     return sourceCode;
 }
 
-std::string File::extension(const std::string &path) { return path.substr(path.find_last_of(".") + 1); }
-std::string File::name(const std::string &path) { return path.substr(path.find_last_of("/") + 1); }
+std::string File::extension(const std::string& path) { return path.substr(path.find_last_of(".") + 1); }
+std::string File::name(const std::string& path) { return path.substr(path.find_last_of("/") + 1); }
 
-} // namespace Engine
+}  // namespace Engine
