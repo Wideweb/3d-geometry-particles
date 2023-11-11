@@ -19,9 +19,7 @@ public:
         // glm::vec4 frontPlane;
     };
 
-    CascadeShadow() { }
-
-    std::array<Cascade, 4> calculate(const glm::mat4 &lightView) {
+    static std::array<Cascade, 4> calculate(const glm::mat4 &lightView, std::array<float, 8> distances) {
         auto &app = Engine::Application::get();
         auto &camera = app.getCamera();
 
@@ -36,9 +34,9 @@ public:
         glm::mat4 L = lightView * cameraWorldMatrix;
         std::array<Cascade, 4> cascades;
 
-        for (size_t k = 0; k < m_Distances.size() / 2; k ++) {
-            float ak = m_Distances[k * 2];
-            float bk = m_Distances[k * 2 + 1];
+        for (size_t k = 0; k < distances.size() / 2; k ++) {
+            float ak = distances[k * 2];
+            float bk = distances[k * 2 + 1];
 
             float cascadeWidth = bk - ak;
 
@@ -125,7 +123,7 @@ public:
             cascades[k].viewProj = Pk * Mk_inv;
 
             if (k > 0) {
-                float bk_prev = m_Distances[k - 1];
+                float bk_prev = distances[k - 1];
                 glm::vec4 fk = glm::vec4(n, -glm::dot(n, c) - ak);
                 fk /= (bk_prev - ak);
 
@@ -135,12 +133,4 @@ public:
 
         return cascades;
     }
-
-private:
-    std::array<float, 8> m_Distances = {
-        0.1f, 16.1f,
-        14.0f, 46.0f,
-        42.0f, 74.0f,
-        70.0f, 102.0f
-    };
 };

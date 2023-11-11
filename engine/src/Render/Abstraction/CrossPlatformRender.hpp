@@ -127,6 +127,8 @@ public:
 
     virtual void clear(float r, float g, float b, float a) = 0;
 
+    virtual void setViewport(uint32_t width, uint32_t height) = 0;
+
     virtual void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) = 0;
 
     virtual void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) = 0;

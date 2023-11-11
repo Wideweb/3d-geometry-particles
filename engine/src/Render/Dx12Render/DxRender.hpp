@@ -90,6 +90,8 @@ class DxRender {
 
     void clear(float r, float g, float b, float a);
 
+    void setViewport(uint32_t width, uint32_t height);
+
     void setRenderPass(std::shared_ptr<DxRenderPass> pass);
 
     void setFramebuffer(std::shared_ptr<DxFramebuffer> fb);

@@ -205,17 +205,7 @@ void DxRender::resize(uint32_t width, uint32_t height) {
     );
     m_DepthStencilBuffer->beginRenderTo(m_CommandList.Get());
 
-	m_ScreenViewport.TopLeftX = 0;
-	m_ScreenViewport.TopLeftY = 0;
-	m_ScreenViewport.Width    = static_cast<float>(m_Width);
-	m_ScreenViewport.Height   = static_cast<float>(m_Height);
-	m_ScreenViewport.MinDepth = 0.0f;
-	m_ScreenViewport.MaxDepth = 1.0f;
-
-    m_ScissorRect = { 0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height) };
-
-    m_CommandList->RSSetViewports(1, &m_ScreenViewport);
-    m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+    setViewport(m_Width, m_Height);
 
     // Execute the resize commands.
     ThrowIfFailed(m_CommandList->Close());
@@ -394,25 +384,8 @@ void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
             auto dsDescriptor = m_DepthStencilBuffer->getDsvDescriptor().cpu;
             m_CommandList->OMSetRenderTargets(1, &rtDescriptor, true, &dsDescriptor);
         }
-        
-        m_CommandList->RSSetViewports(1, &m_ScreenViewport);
-        m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
     } else {
         fb->beginRenderTo(m_CommandList.Get());
-
-        D3D12_VIEWPORT screenViewport;
-        screenViewport.TopLeftX = 0;
-        screenViewport.TopLeftY = 0;
-        screenViewport.Width    = static_cast<float>(2048);
-        screenViewport.Height   = static_cast<float>(2048);
-        screenViewport.MinDepth = 0.0f;
-        screenViewport.MaxDepth = 1.0f;
-
-        D3D12_RECT scissorRect;
-        scissorRect = { 0, 0, static_cast<LONG>(2048), static_cast<LONG>(2048) };
-
-        m_CommandList->RSSetViewports(1, &screenViewport);
-        m_CommandList->RSSetScissorRects(1, &scissorRect);
     }
 
     m_Framebuffer = fb;
@@ -427,6 +400,23 @@ void DxRender::clear(float r, float g, float b, float a) {
     } else {
         m_Framebuffer->clear(m_CommandList.Get());
     }
+}
+
+void DxRender::setViewport(uint32_t width, uint32_t height) {
+    m_Width = width;
+    m_Height = height;
+
+    m_ScreenViewport.TopLeftX = 0;
+	m_ScreenViewport.TopLeftY = 0;
+	m_ScreenViewport.Width    = static_cast<float>(m_Width);
+	m_ScreenViewport.Height   = static_cast<float>(m_Height);
+	m_ScreenViewport.MinDepth = 0.0f;
+	m_ScreenViewport.MaxDepth = 1.0f;
+
+    m_ScissorRect = { 0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height) };
+
+    m_CommandList->RSSetViewports(1, &m_ScreenViewport);
+    m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 }
 
 void DxRender::registerGeometry(const std::string& geometry, const std::vector<std::string>& subGeometries, const std::vector<Mesh>& subMeshes) {

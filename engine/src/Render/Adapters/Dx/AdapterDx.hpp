@@ -268,6 +268,10 @@ public:
         m_NativeRender->clear(r, g, b, a);
     }
 
+    void setViewport(uint32_t width, uint32_t height) override {
+        m_NativeRender->setViewport(width, height);
+    }
+
     void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
         auto passWrapper = std::static_pointer_cast<DxRenderPassWrapper>(pass);
         m_NativeRender->setRenderPass(passWrapper->getNative());

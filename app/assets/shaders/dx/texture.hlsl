@@ -1,10 +1,11 @@
-#include "light-lib.hlsl"
+#include "libs/common.hlsl"
 
 cbuffer cbCommon : register(b0)
 {
     float4x4 view;
     float4x4 projection;
     float3 viewPos;
+    float time;
     float4 ambientLight;
     Light light;
 };
@@ -15,13 +16,6 @@ cbuffer cbObject : register(b1)
 };
 
 Texture2D diffuseMap : register(t0);
-
-SamplerState gsamPointWrap        : register(s0);
-SamplerState gsamPointClamp       : register(s1);
-SamplerState gsamLinearWrap       : register(s2);
-SamplerState gsamLinearClamp      : register(s3);
-SamplerState gsamAnisotropicWrap  : register(s4);
-SamplerState gsamAnisotropicClamp : register(s5);
 
 struct VertexIn
 {
@@ -60,6 +54,4 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
     return diffuseMap.Sample(gsamAnisotropicWrap, pin.TexCoord);
-    // return float4(normalize(pin.NormalW), 1.0);
-    // return pin.Color;
 }

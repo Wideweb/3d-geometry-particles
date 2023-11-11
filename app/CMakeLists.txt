@@ -9,13 +9,25 @@ set(CMAKE_UNITY_BUILD ON)
 set(SOURCE_EXE 
     src/main.cpp
     src/AppLayer.cpp
-    src/Geometry.cpp
-    src/GeometryParticle.cpp
+    src/gfx/CascadeShadows/CascadeShadowEffect.cpp
+    src/gfx/GeometryParticles/GeometryParticleEffect.cpp
+    src/gfx/GeometryParticles/Geometry.cpp
+    src/gfx/GeometryParticles/GeometryParticle.cpp
+    src/gfx/Skybox/SkyboxEffect.cpp
 )
 
 add_executable(${PROJECT_NAME} WIN32 ${SOURCE_EXE})
 
+set(INCLUDE_DIRS 
+    src
+    src/gfx
+    src/gfx/CascadeShadows
+    src/gfx/GeometryParticles
+    src/gfx/Skybox
+)
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Engine)
 

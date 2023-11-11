@@ -1,26 +1,6 @@
+#include "/libs/common.hlsl"
+
 #define MaxLights 16
-
-struct Cascade
-{
-    float4x4 viewProj;
-    // float4 frontPlane;
-};
-
-struct Light
-{
-    Cascade cascades[4];
-    float3 strength;
-    float a;
-    float3 direction;   // directional/spot light only
-    float b;
-};
-
-struct Material
-{
-    float4 diffuseAlbedo;
-    float3 fresnelR0;
-    float shininess;
-};
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
