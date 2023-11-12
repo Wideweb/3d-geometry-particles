@@ -17,7 +17,7 @@ void GeometryParticleEffect::bind() {
         {"cbMaterial", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA}
     };
     m_Shader = render.createShaderProgram(
-        "./../assets/shaders/dx/light.hlsl", "./../assets/shaders/dx/light-no-shadow.hlsl", slots
+        "./../assets/shaders/dx/light-no-shadow.hlsl", "./../assets/shaders/dx/light-no-shadow.hlsl", slots
     );
 
     Engine::CrossPlatformRenderPass::PipelineDesc pipelineDesc;

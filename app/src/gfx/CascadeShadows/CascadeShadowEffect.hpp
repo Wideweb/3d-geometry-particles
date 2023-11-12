@@ -53,5 +53,5 @@ private:
     std::vector<std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer>> m_ScreenRenderData;
     // DEBUG
 
-    std::array<float, 8> m_CascadeDistances = {0.1f, 16.1f, 14.0f, 46.0f, 42.0f, 74.0f, 70.0f, 102.0f};
+    std::array<float, 8> m_CascadeDistances = {0.0f, 16.0f, 6.0f, 32.0f, 22.0f, 64.0f, 54.0f, 100.0f};
 };

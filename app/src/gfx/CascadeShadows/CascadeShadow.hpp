@@ -15,10 +15,10 @@ class CascadeShadow {
 public:
     struct Cascade {
         glm::mat4 viewProj;
-        // glm::vec4 frontPlane;
+        glm::vec4 frontPlane;
     };
 
-    static std::array<Cascade, 4> calculate(const glm::mat4& lightView, std::array<float, 8> distances) {
+    static std::array<Cascade, 4> calculate(const glm::mat4& lightView, std::array<float, 8> distances, float zMinOffset, float zMaxOffset) {
         auto& app    = Engine::Application::get();
         auto& camera = app.getCamera();
 
@@ -31,7 +31,7 @@ public:
 
         glm::mat4              cameraWorldMatrix = camera.worldMatrix();
         glm::mat4              L                 = lightView * cameraWorldMatrix;
-        std::array<Cascade, 4> cascades;
+        std::array<Cascade, 4> cascades = {};
 
         for (size_t k = 0; k < distances.size() / 2; k++) {
             float ak = distances[k * 2];
@@ -90,11 +90,11 @@ public:
 
             float zMax = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
                              return lhs.z < rhs.z;
-                         })->z;
+                         })->z + zMaxOffset;
 
             float zMin = std::max_element(vertices.begin(), vertices.end(), [](glm::vec3 lhs, glm::vec3 rhs) {
                              return lhs.z > rhs.z;
-                         })->z;
+                         })->z + zMinOffset;
 
             float sk_x = ((xMax + xMin) / (2 * T)) * T;
             float sk_y = ((yMax + yMin) / (2 * T)) * T;
@@ -109,9 +109,6 @@ public:
                 -sk_x, -sk_y, -sk_z, 1.0f
             );
 
-            glm::vec3 n = glm::vec3(cameraWorldMatrix[2]);
-            glm::vec3 c = glm::vec3(cameraWorldMatrix[3]);
-
             glm::mat4 Pk = glm::mat4(
                 2.0f / dk, 0.0f, 0.0f, 0.0f,
                 0.0f, 2.0f / dk, 0.0f, 0.0f,
@@ -122,12 +119,14 @@ public:
             cascades[k].viewProj = Pk * Mk_inv;
 
             if (k > 0) {
-                float bk_prev = distances[k - 1];
+                float     bk_prev = distances[k * 2 - 1];
+                glm::vec3 n       = glm::vec3(cameraWorldMatrix[2]) * -1.0f;
+                glm::vec3 c       = glm::vec3(cameraWorldMatrix[3]);
 
                 glm::vec4 fk = glm::vec4(n, -glm::dot(n, c) - ak);
                 fk /= (bk_prev - ak);
 
-                // cascades[k].frontPlane = fk;
+                cascades[k].frontPlane = fk;
             }
         }
 

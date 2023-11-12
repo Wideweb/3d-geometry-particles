@@ -8,7 +8,7 @@ void CascadeShadowEffect::bind() {
     auto& render = app.getRender();
 
     Engine::Mesh monkey  = Engine::ModelLoader::loadObj("./../assets/models/monkey.obj");
-    Engine::Mesh terrain = ModelFactory::createPlane(50.0f, 10, 10);
+    Engine::Mesh terrain = ModelFactory::createPlane(20.0f, 10, 10);
     Engine::Mesh plane   = ModelFactory::createPlane(2.0f, 1, 1);
 
     render.registerGeometry("cascade-shadow", {"instance", "terrain", "plane"}, {monkey, terrain, plane});
@@ -67,7 +67,7 @@ void CascadeShadowEffect::initLightPass() {
         {"shadowMap",  Engine::SHADER_PROGRAM_SLOT_TYPE::TEXTURE_ARRAY_4},
     };
     m_LightShader = render.createShaderProgram(
-        "./../assets/shaders/dx/light.hlsl", "./../assets/shaders/dx/light-cascade-shadow.hlsl", slots
+        "./../assets/shaders/dx/light-cascade-shadow.hlsl", "./../assets/shaders/dx/light-cascade-shadow.hlsl", slots
     );
 
     Engine::CrossPlatformRenderPass::PipelineDesc rsLightPipelineDesc;
@@ -111,7 +111,7 @@ void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
         0.5f,  0.5f, 0.0f, 1.0f
     );
 
-    auto cascades = CascadeShadow::calculate(commonData.light.view, m_CascadeDistances);
+    auto cascades = CascadeShadow::calculate(commonData.light.view, m_CascadeDistances, -10.0f, 10.0f);
 
     for (size_t i = 0; i < m_DepthMaps.size(); i++) {
         DepthRenderCommonData depthCommonData;
@@ -121,7 +121,7 @@ void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
 
     for (size_t i = 0; i < cascades.size(); i++) {
         commonData.light.cascades[i] = glm::transpose(projFix * cascades[i].viewProj);
-        // commonData.light.cascades[i].frontPlane = cascades[i].frontPlane;
+        commonData.light.cascadesFrontPlanes[i] = cascades[i].frontPlane;
     }
 }
 

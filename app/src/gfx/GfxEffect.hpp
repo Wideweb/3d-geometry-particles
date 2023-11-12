@@ -11,6 +11,7 @@ public:
     struct RenderLightData {
         glm::mat4 view;
         glm::mat4 cascades[4];
+        glm::vec4 cascadesFrontPlanes[4];
         glm::vec3 strength;
         float     padding_0;
         glm::vec3 direction;

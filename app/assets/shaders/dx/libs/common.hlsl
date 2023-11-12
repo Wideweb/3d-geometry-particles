@@ -4,6 +4,7 @@
 struct Light {
     float4x4 view;
     float4x4 cascades[4];
+    float4 cascadesFrontPlanes[4];
     float3 strength;
     float padding_0;
     float3 direction;
