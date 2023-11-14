@@ -43,6 +43,8 @@ public:
     void      update();
     glm::mat4 getTransform();
 
+    glm::vec3 getRight() const { return m_Q; }
+
     glm::vec4 color = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
 
 private:

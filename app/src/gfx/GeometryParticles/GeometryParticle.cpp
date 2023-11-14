@@ -12,6 +12,8 @@ GeometryParticle::GeometryParticle(Geometry& geometry)
 void GeometryParticle::setUp() {
     Engine::Mesh& mesh = m_Geometry.mesh;
 
+    Engine::Math::srand();
+
     m_TriangleIndex = Engine::Math::rand(mesh.vertices.size() / 3 - 1);
 
     int index0 = m_TriangleIndex * 3;
@@ -29,7 +31,7 @@ void GeometryParticle::setUp() {
     glm::vec3 N = getTriangleNormal(P0, P1, P2);
 
     // float a = glm::dot(N, prep_N);
-
+     
     float w0 = Engine::Math::randFloat() + 0.3f;
     float w1 = Engine::Math::randFloat() + 0.3f;
     float w2 = Engine::Math::randFloat() + 0.3f;

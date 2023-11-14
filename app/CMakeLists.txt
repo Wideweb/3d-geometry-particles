@@ -14,6 +14,7 @@ set(SOURCE_EXE
     src/gfx/GeometryParticles/Geometry.cpp
     src/gfx/GeometryParticles/GeometryParticle.cpp
     src/gfx/Skybox/SkyboxEffect.cpp
+    src/gfx/SkyboxNoise/SkyboxNoiseEffect.cpp
 )
 
 add_executable(${PROJECT_NAME} WIN32 ${SOURCE_EXE})
@@ -24,6 +25,7 @@ set(INCLUDE_DIRS
     src/gfx/CascadeShadows
     src/gfx/GeometryParticles
     src/gfx/Skybox
+    src/gfx/SkyboxNoise
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})

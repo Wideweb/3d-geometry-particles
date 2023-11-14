@@ -21,14 +21,28 @@ private:
         glm::mat4 model;
     };
 
+    void initLightPass();
+    void initDebugPass();
+    
+    void initGeometry();
+    void initParticles();
+
     std::shared_ptr<Engine::CrossPlatformShaderProgram> m_Shader;
     std::shared_ptr<Engine::CrossPlatformRenderPass>    m_RenderPass;
 
     std::shared_ptr<Geometry>                                     m_Geometry;
     std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> m_GeometryRenderData;
     std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> m_GeometryMaterialRenderData;
+    glm::mat4                                                     m_GeometryTransform;
 
     std::vector<GeometryParticle>                                              m_Particles;
     std::vector<std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer>> m_ParticlesRenderData;
     std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer>              m_ParticleMaterialRenderData;
+
+    // DEBUG
+    std::shared_ptr<Engine::CrossPlatformShaderProgram>                        m_DebugShader;
+    std::shared_ptr<Engine::CrossPlatformRenderPass>                           m_DebugRenderPass;
+    std::vector<std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer>> m_DebugPlanesRenderData;
+    std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer>              m_DebugPlaneMaterialRenderData;
+    // DEBUG
 };

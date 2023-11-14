@@ -33,6 +33,7 @@ struct VertexOut
     float4 PosH     : SV_POSITION;
     float3 PosW     : POSITION0;
     float3 TexCoord : TEXCOORD;
+    float3 NormalL  : NORMAL;
 };
 
 VertexOut VS(VertexIn vin)
@@ -55,13 +56,28 @@ VertexOut VS(VertexIn vin)
     vout.PosH = posH.xyww;
     vout.PosW = posW;
     vout.TexCoord = vin.PosL;
+    vout.NormalL = vin.NormalL;
 
     return vout;
 }
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    float4 skyColor = cubeMap.Sample(gsamLinearWrap, pin.TexCoord);
+    float4 skyColor = float4(0.25f, 0.25f, 1.00f, 1.0f);
 
-    return lerp(skyColor, FOG_COLOR, FogFactor(pin.PosW, viewPos, time));
+    // float noiseSample = Turbulence(pin.PosW * 3.0 + time * 0.05);
+    // float mergefactor = noiseSample;
+    // float heightFactor = mergefactor;
+
+    // float noiseSample = Ridget(pin.PosW * 2.5 + time * 0.05);
+    // float mergefactor = (noiseSample - 0.5) * 1.25 + 0.5;
+    // float heightFactor = noiseSample * 0.5;
+
+    float noiseSample = FBM(pin.PosW * 5.0 + time * 0.05);
+    float mergefactor = noiseSample * 0.5 + 0.5;
+    float heightFactor = mergefactor;
+
+    float skyFoxfactor = lerp(0.0, mergefactor, smoothstep(0.1, 0.2, pin.PosW.y + heightFactor * 0.1));
+
+    return lerp(FOG_COLOR, skyColor, skyFoxfactor);
 }

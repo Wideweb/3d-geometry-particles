@@ -41,8 +41,18 @@ float CalcShadowFactor(float3 posW, float3 posV, Light light, Texture2D shadowMa
     return percentLit / 9.0f;
 }
 
-float CalcShadowFactorWithPCF(float2 coords, float currentDepth, Texture2D shadowMap)
+float CalcShadowFactorWithPCF(float3 posW, Light light, float2 coords, float currentDepth, Texture2D shadowMap)
 {
+    // float4 posInLight = mul(float4(posW, 1.0f), light.view);
+    // float4 posInLightDx = ddx(posInLight);
+    // float4 posInLightDy = ddy(posInLight);
+
+    // float2x2 dxdy = float2x2(
+    //     float2(posInLightDx.x, posInLightDy.x),
+    //     float2(posInLightDx.y, posInLightDy.y)
+    // );
+    // float2x2 dxdyInv = inverse(dxdy);
+
     uint width, height, numMips;
     shadowMap.GetDimensions(0, width, height, numMips);
 
@@ -60,6 +70,9 @@ float CalcShadowFactorWithPCF(float2 coords, float currentDepth, Texture2D shado
     [unroll]
     for(int i = 0; i < 9; ++i)
     {
+        // float2 screenSpaceOffset = mul(offsets[i], dxdyInv);
+        // float dz = screenSpaceOffset.x * posInLightDx.z + screenSpaceOffset.y * posInLightDy.z;
+
         percentLit += shadowMap.SampleCmpLevelZero(gsamShadow, coords.xy + offsets[i], currentDepth).r;
     }
     
@@ -83,8 +96,31 @@ float CalcShadowFactorWithBlending(float3 posW, float3 posV, Light light, Textur
     float3 blend = saturate(cascadeBlend);
     float weight = beyondCascade2 ? (blend.y - blend.z) : (1.0f - blend.x);
 
-    float shadow1 = CalcShadowFactorWithPCF(posCascade1.xy, posCascade1.z - bias, shadowMap[layer1]);
-    float shadow2 = CalcShadowFactorWithPCF(posCascade2.xy, posCascade2.z - bias, shadowMap[layer2]);
+    float shadow1 = CalcShadowFactorWithPCF(posW, light, posCascade1.xy, posCascade1.z - bias, shadowMap[layer1]);
+    float shadow2 = CalcShadowFactorWithPCF(posW, light, posCascade2.xy, posCascade2.z - bias, shadowMap[layer2]);
 
     return lerp(shadow2, shadow1, weight);
+}
+
+float4 DebugCascadeBlending(float3 cascadeBlend)
+{
+    float stroke = 0.01f;
+    const float4 colors[4] =
+    {
+        float4(1.0, 0.0, 0.0, 1.0),
+        float4(0.0, 1.0, 0.0, 1.0),
+        float4(0.0, 0.0, 1.0, 1.0),
+        float4(1.0, 0.0, 1.0, 1.0)
+    };
+
+    bool beyondCascade2 = cascadeBlend.y >= 0.0f;
+    bool beyondCascade3 = cascadeBlend.z >= 0.0f;
+
+    uint layer1 = beyondCascade2 ? 2 : 0;
+    uint layer2 = beyondCascade3 ? 3 : 1;
+
+    float3 blend = saturate(cascadeBlend);
+    float weight = cascadeBlend.y >= 0.0f ? (blend.y - blend.z) : (1.0f - blend.x);
+
+    return lerp(colors[layer2], colors[layer1], weight);
 }

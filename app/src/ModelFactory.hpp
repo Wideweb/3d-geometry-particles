@@ -185,4 +185,100 @@ public:
         Engine::Mesh mesh(vertices, indices);
         return mesh;
     }
+
+    static Engine::Mesh createSphere(float radius, size_t sliceCount, size_t stackCount) {
+        Engine::Mesh mesh;
+
+        Engine::Vertex topVertex(
+            glm::vec3(0.0f, radius, 0.0f), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+            glm::vec3(0.8f, 0.6f, 0.1f)
+        );
+        Engine::Vertex bottomVertex(
+            glm::vec3(0.0f, -radius, 0.0f), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+            glm::vec3(0.8f, 0.6f, 0.1f)
+        );
+
+        mesh.vertices.push_back(topVertex);
+
+        float pi = 3.14159265358979323846;
+
+        float phiStep   = pi / stackCount;
+        float thetaStep = 2.0f * pi / sliceCount;
+
+        // Compute vertices for each stack ring (do not count the poles as rings).
+        for (size_t i = 1; i <= stackCount - 1; i++) {
+            float phi = i * phiStep;
+
+            // Vertices of ring.
+            for (size_t j = 0; j <= sliceCount; j++) {
+                float theta = j * thetaStep;
+
+                Engine::Vertex v;
+
+                // spherical to cartesian
+                v.position.x = radius * sinf(phi) * cosf(theta);
+                v.position.y = radius * cosf(phi);
+                v.position.z = radius * sinf(phi) * sinf(theta);
+
+                v.normal = v.position;
+
+                v.textCoord.x = theta / pi;
+                v.textCoord.y = phi / pi;
+
+                mesh.vertices.push_back(v);
+            }
+        }
+
+        mesh.vertices.push_back(bottomVertex);
+
+        //
+        // Compute indices for top stack.  The top stack was written first to the vertex buffer
+        // and connects the top pole to the first ring.
+        //
+
+        for (size_t i = 1; i <= sliceCount; ++i) {
+            mesh.indices.push_back(0);
+            mesh.indices.push_back(i + 1);
+            mesh.indices.push_back(i);
+        }
+
+        //
+        // Compute indices for inner stacks (not connected to poles).
+        //
+
+        // Offset the indices to the index of the first vertex in the first ring.
+        // This is just skipping the top pole vertex.
+        size_t baseIndex       = 1;
+        size_t ringVertexCount = sliceCount + 1;
+        for (size_t i = 0; i < stackCount - 2; ++i) {
+            for (size_t j = 0; j < sliceCount; ++j) {
+                mesh.indices.push_back(baseIndex + i * ringVertexCount + j);
+                mesh.indices.push_back(baseIndex + i * ringVertexCount + j + 1);
+                mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
+
+                mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
+                mesh.indices.push_back(baseIndex + i * ringVertexCount + j + 1);
+                mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j + 1);
+            }
+        }
+
+        //
+        // Compute indices for bottom stack.  The bottom stack was written last to the vertex buffer
+        // and connects the bottom pole to the bottom ring.
+        //
+
+        // South pole vertex was added last.
+        size_t southPoleIndex = mesh.vertices.size() - 1;
+
+        // Offset the indices to the index of the first vertex in the last ring.
+        baseIndex = southPoleIndex - ringVertexCount;
+
+        for (size_t i = 0; i < sliceCount; ++i) {
+            mesh.indices.push_back(southPoleIndex);
+            mesh.indices.push_back(baseIndex + i);
+            mesh.indices.push_back(baseIndex + i + 1);
+        }
+
+        return mesh;
+    }
 };

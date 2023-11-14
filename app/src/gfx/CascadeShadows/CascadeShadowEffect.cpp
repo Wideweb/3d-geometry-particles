@@ -15,15 +15,11 @@ void CascadeShadowEffect::bind() {
 
     initDepthPass();
     initLightPass();
-    initDebugPass();
 
-    m_TerrainRenderData         = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
-    m_TerrainMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
+    initTerrain();
+    initInstances();
 
-    for (size_t i = 0; i < 100; i++) {
-        m_InstancesRenderData.push_back(render.createShaderProgramDataBuffer(sizeof(RenderItemData)));
-    }
-    m_InstanceMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
+    // initDebugPass();
 }
 
 void CascadeShadowEffect::initDepthPass() {
@@ -102,6 +98,56 @@ void CascadeShadowEffect::initDebugPass() {
     }
 }
 
+void CascadeShadowEffect::initTerrain() {
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
+
+    m_TerrainRenderData         = render.createShaderProgramDataBuffer(sizeof(RenderCommonData));
+    m_TerrainMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
+    
+    RenderItemData terrainItemData;
+    terrainItemData.model = glm::rotate(glm::mat4(1.0f), 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
+    terrainItemData.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * terrainItemData.model;
+    terrainItemData.model = glm::transpose(terrainItemData.model);
+    m_TerrainRenderData->copyData(&terrainItemData);
+
+    GfxEffect::RenderMaterialData terrainMaterial;
+    terrainMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
+    terrainMaterial.fresnelR0     = glm::vec3(0.01f);
+    terrainMaterial.roughness     = 0.5f;
+    m_TerrainMaterialRenderData->copyData(&terrainMaterial);
+}
+
+void CascadeShadowEffect::initInstances() {
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
+
+    for (size_t i = 0; i < 100; i++) {
+        m_InstancesRenderData.push_back(render.createShaderProgramDataBuffer(sizeof(RenderItemData)));
+    }
+    m_InstanceMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
+
+    for (size_t i = 0; i < m_InstancesRenderData.size(); i++) {
+        int x = i / 5;
+        int z = i % 5 + 1;
+
+        float uv_x = x * 5.0f / m_InstancesRenderData.size();
+
+        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+        model           = glm::translate(glm::mat4(1.0f), glm::vec3(x * 5.0f, 0.0f, z * 5.0f)) * model;
+
+        RenderItemData itemData;
+        itemData.model = glm::transpose(model);
+        m_InstancesRenderData[i]->copyData(&itemData);
+    }
+
+    GfxEffect::RenderMaterialData instanceMaterial;
+    instanceMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
+    instanceMaterial.fresnelR0     = glm::vec3(0.01f);
+    instanceMaterial.roughness     = 0.5f;
+    m_InstanceMaterialRenderData->copyData(&instanceMaterial);
+}
+
 void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
     // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
     glm::mat4 projFix = glm::mat4(
@@ -131,41 +177,6 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
     auto& render = app.getRender();
     auto& time   = app.getTime();
 
-    ////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////// UPDATE GPU DATA //////////////////////////////
-    RenderItemData terrainItemData;
-    terrainItemData.model = glm::rotate(glm::mat4(1.0f), 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
-    terrainItemData.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * terrainItemData.model;
-    terrainItemData.model = glm::transpose(terrainItemData.model);
-    m_TerrainRenderData->copyData(&terrainItemData);
-
-    GfxEffect::RenderMaterialData terrainMaterial;
-    terrainMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
-    terrainMaterial.fresnelR0     = glm::vec3(0.01f);
-    terrainMaterial.roughness     = 0.5f;
-    m_TerrainMaterialRenderData->copyData(&terrainMaterial);
-
-    for (size_t i = 0; i < m_InstancesRenderData.size(); i++) {
-        int x = i / 5;
-        int z = i % 5 + 1;
-
-        float uv_x = x * 5.0f / m_InstancesRenderData.size();
-        float y    = std::sin(uv_x * 6.28f * 2.0 + time.getTotalSeconds()) + 1.0f;
-
-        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-        model           = glm::translate(glm::mat4(1.0f), glm::vec3(x * 5.0f, 0.0f, z * 5.0f)) * model;
-
-        RenderItemData itemData;
-        itemData.model = glm::transpose(model);
-        m_InstancesRenderData[i]->copyData(&itemData);
-    }
-
-    GfxEffect::RenderMaterialData instanceMaterial;
-    instanceMaterial.diffuseAlbedo = glm::vec4(0.8f, 0.6f, 0.1f, 1.0f);
-    instanceMaterial.fresnelR0     = glm::vec3(0.01f);
-    instanceMaterial.roughness     = 0.5f;
-    m_InstanceMaterialRenderData->copyData(&instanceMaterial);
-    ///////////////////////////// UPDATE GPU DATA //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     //////////////////////////////// DEPTH MAP /////////////////////////////////
     uint32_t prevViewportWidth, prevViewportHeight;
@@ -212,15 +223,15 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
     /////////////////////////////////// DRAW ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// DEBUG ///////////////////////////////////
-    render.setRenderPass(m_ScreenTextureRenderPass);
-    for (size_t i = 0; i < m_ScreenRenderData.size(); i++) {
-        RenderItemData itemData;
-        itemData.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 1.0f));
-        itemData.model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.7 + (i) * 0.45f, -0.7f, 0.0f)) * itemData.model;
-        m_ScreenRenderData[i]->copyData(&itemData);
+    // render.setRenderPass(m_ScreenTextureRenderPass);
+    // for (size_t i = 0; i < m_ScreenRenderData.size(); i++) {
+    //     RenderItemData itemData;
+    //     itemData.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 1.0f));
+    //     itemData.model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.7 + (i) * 0.45f, -0.7f, 0.0f)) * itemData.model;
+    //     m_ScreenRenderData[i]->copyData(&itemData);
 
-        m_ScreenTextureShader->setDataSlot(0, m_ScreenRenderData[i]);
-        m_ScreenTextureShader->setTextureSlot(1, m_DepthMaps[i].texture);
-        render.drawItem("cascade-shadow", "plane");
-    }
+    //     m_ScreenTextureShader->setDataSlot(0, m_ScreenRenderData[i]);
+    //     m_ScreenTextureShader->setTextureSlot(1, m_DepthMaps[i].texture);
+    //     render.drawItem("cascade-shadow", "plane");
+    // }
 }

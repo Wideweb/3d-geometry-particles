@@ -22,7 +22,7 @@ void AppLayer::onAttach() {
 
     m_Effects.push_back(std::make_shared<GeometryParticleEffect>());
     m_Effects.push_back(std::make_shared<CascadeShadowEffect>());
-    m_Effects.push_back(std::make_shared<SkyboxEffect>());
+    m_Effects.push_back(std::make_shared<SkyboxNoiseEffect>());
 
     for (auto& effect : m_Effects) {
         effect->bind();

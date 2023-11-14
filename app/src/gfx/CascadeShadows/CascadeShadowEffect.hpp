@@ -34,6 +34,9 @@ private:
     void initLightPass();
     void initDebugPass();
 
+    void initTerrain();
+    void initInstances();
+
     std::shared_ptr<Engine::CrossPlatformShaderProgram> m_LightShader;
     std::shared_ptr<Engine::CrossPlatformRenderPass>    m_LightRenderPass;
 
