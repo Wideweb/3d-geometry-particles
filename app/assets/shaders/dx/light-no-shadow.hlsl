@@ -1,5 +1,6 @@
-#include "/libs/common.hlsl"
-#include "/libs/light.hlsl"
+#include "libs/common.hlsl"
+#include "libs/light.hlsl"
+#include "libs/fog.hlsl"
 
 cbuffer cbCommon : register(b0)
 {
@@ -73,5 +74,5 @@ float4 PS(VertexOut pin) : SV_Target
     float4 litColor = ambient + directLight;
     litColor.a = diffuseAlbedo.a;
 
-    return litColor;
+    return lerp(litColor, FOG_COLOR, FogFactor(pin.PosW, viewPos, time));
 }

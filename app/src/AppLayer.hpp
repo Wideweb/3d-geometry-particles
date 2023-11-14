@@ -9,6 +9,7 @@
 #include "GfxEffect.hpp"
 #include "SkyboxEffect.hpp"
 #include "SkyboxNoiseEffect.hpp"
+#include "FrustrumCullingEffect.hpp"
 
 class AppLayer : public Engine::Layer {
 public:

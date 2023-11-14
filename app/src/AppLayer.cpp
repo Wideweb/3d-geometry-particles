@@ -21,7 +21,8 @@ void AppLayer::onAttach() {
     m_CommonDataBuffer = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderCommonData));
 
     m_Effects.push_back(std::make_shared<GeometryParticleEffect>());
-    m_Effects.push_back(std::make_shared<CascadeShadowEffect>());
+    // m_Effects.push_back(std::make_shared<FrustrumCullingEffect>());
+    m_Effects.push_back(std::make_shared<FrustrumCullingEffect>());
     m_Effects.push_back(std::make_shared<SkyboxNoiseEffect>());
 
     for (auto& effect : m_Effects) {
@@ -38,33 +39,35 @@ void AppLayer::onUpdate() {
     auto& input            = app.getInput();
     auto& cameraController = app.getCameraController();
 
+    float speed = 1.0f;
+
     if (input.IsKeyPressed(Engine::KeyCode::W)) {
-        glm::vec3 delta = glm::vec3(0.0, 0.0f, 0.5f);
+        glm::vec3 delta = glm::vec3(0.0, 0.0f, speed);
         cameraController.move(delta, 0.1);
     }
 
     if (input.IsKeyPressed(Engine::KeyCode::S)) {
-        glm::vec3 delta = glm::vec3(0.0, 0.0f, -0.5f);
+        glm::vec3 delta = glm::vec3(0.0, 0.0f, -speed);
         cameraController.move(delta, 0.1);
     }
 
     if (input.IsKeyPressed(Engine::KeyCode::A)) {
-        glm::vec3 delta = glm::vec3(-0.5f, 0.0f, 0.0);
+        glm::vec3 delta = glm::vec3(-speed, 0.0f, 0.0);
         cameraController.move(delta, 0.1);
     }
 
     if (input.IsKeyPressed(Engine::KeyCode::D)) {
-        glm::vec3 delta = glm::vec3(0.5f, 0.0f, 0.0);
+        glm::vec3 delta = glm::vec3(speed, 0.0f, 0.0);
         cameraController.move(delta, 0.1);
     }
 
     if (input.IsKeyPressed(Engine::KeyCode::Q)) {
-        glm::vec3 delta = glm::vec3(0.0f, -0.5, 0.0f);
+        glm::vec3 delta = glm::vec3(0.0f, -speed, 0.0f);
         cameraController.move(delta, 0.1);
     }
 
     if (input.IsKeyPressed(Engine::KeyCode::E)) {
-        glm::vec3 delta = glm::vec3(0.0f, 0.5, 0.0f);
+        glm::vec3 delta = glm::vec3(0.0f, speed, 0.0f);
         cameraController.move(delta, 0.1);
     }
 
