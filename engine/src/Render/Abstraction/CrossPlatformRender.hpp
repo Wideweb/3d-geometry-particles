@@ -63,6 +63,18 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////
+///////////////////////// READ WRITE DATA BUFFER ///////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class CrossPlatformReadWriteDataBuffer {
+public:
+    virtual void  copyData(void* data)                  = 0;
+    virtual void  copyData(void* data, size_t byteSize) = 0;
+    virtual void  readFromVRAM()                        = 0;
+    virtual void  writeToVRAM()                         = 0;
+    virtual void* data()                                = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// SHADER PROGRAM //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class CrossPlatformShaderProgram {
@@ -71,6 +83,19 @@ public:
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture)             = 0;
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture)       = 0;
     virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformDepthStencilTexture> texture) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////////// COMPUTE PROGRAM //////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class CrossPlatformComputeProgram {
+public:
+    virtual void setDataSlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer)      = 0;
+    virtual void setDataArraySlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer) = 0;
+    virtual void setReadWriteDataSlot(size_t index, std::shared_ptr<CrossPlatformReadWriteDataBuffer> buffer) = 0;
+    virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture)                  = 0;
+    virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture)            = 0;
+    virtual void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformDepthStencilTexture> texture)      = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -84,6 +109,11 @@ public:
         bool       depthClipEnable = true;
     };
 };
+
+////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// COMPUTE PASS ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class CrossPlatformComputePass {};
 
 ////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// FRAMEBUFFER ///////////////////////////////
@@ -122,7 +152,11 @@ public:
 
     virtual void setViewport(uint32_t width, uint32_t height) = 0;
 
-    virtual void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) = 0;
+    virtual void setPass(std::shared_ptr<CrossPlatformRenderPass> pass) = 0;
+
+    virtual void setComputePass(std::shared_ptr<CrossPlatformComputePass> pass) = 0;
+
+    virtual void compute(size_t x, size_t y, size_t z) = 0;
 
     virtual void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) = 0;
 
@@ -146,7 +180,13 @@ public:
         const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots
     ) = 0;
 
+    virtual std::shared_ptr<CrossPlatformComputeProgram> createComputeProgram(
+        const std::string& file, const std::vector<ShaderProgramSlotDesc>& slots
+    ) = 0;
+
     virtual std::shared_ptr<CrossPlatformShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize) = 0;
+
+    virtual std::shared_ptr<CrossPlatformReadWriteDataBuffer> createReadWriteDataBuffer(size_t byteSize) = 0;
 
     virtual std::shared_ptr<CrossPlatformFramebuffer> createFramebuffer() = 0;
 
@@ -158,6 +198,10 @@ public:
         std::shared_ptr<CrossPlatformShaderProgram> shaderProgram,
         std::vector<CROSS_PLATFROM_TEXTURE_FORMATS> rtvFormats, CROSS_PLATFROM_TEXTURE_FORMATS dsvFormat,
         CrossPlatformRenderPass::PipelineDesc pipelineDesc
+    ) = 0;
+
+    virtual std::shared_ptr<CrossPlatformComputePass> createComputePass(
+        std::shared_ptr<CrossPlatformComputeProgram> computeProgram
     ) = 0;
 
     virtual void drawItem(const std::string& geometry, const std::string& subGeometry) = 0;

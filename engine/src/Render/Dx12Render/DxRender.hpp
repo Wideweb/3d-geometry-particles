@@ -1,9 +1,12 @@
 #pragma once
 
+#include "DxComputePass.hpp"
+#include "DxComputeProgram.hpp"
 #include "DxDepthStencilTexture.hpp"
 #include "DxDescriptorPool.hpp"
 #include "DxFramebuffer.hpp"
 #include "DxGeometryRegistry.hpp"
+#include "DxReadWriteDataBuffer.hpp"
 #include "DxRenderPass.hpp"
 #include "DxRenderResource.hpp"
 #include "DxRenderTexture.hpp"
@@ -58,6 +61,9 @@ private:
     std::unique_ptr<DxDescriptorPool> m_RtvDescPool;
     std::unique_ptr<DxDescriptorPool> m_DsvDescPool;
     std::unique_ptr<DxDescriptorPool> m_CbvSrvUavDescPool;
+    std::unique_ptr<DxDescriptorPool> m_CbvDescPool;
+    std::unique_ptr<DxDescriptorPool> m_SrvDescPool;
+    std::unique_ptr<DxDescriptorPool> m_UavDescPool;
 
     DXGI_FORMAT m_BackBufferFormat   = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -93,6 +99,8 @@ public:
 
     void setRenderPass(std::shared_ptr<DxRenderPass> pass);
 
+    void setComputePass(std::shared_ptr<DxComputePass> pass);
+
     void setFramebuffer(std::shared_ptr<DxFramebuffer> fb);
 
     void registerGeometry(
@@ -113,7 +121,13 @@ public:
         const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots
     );
 
+    std::shared_ptr<DxComputeProgram> createComputeProgram(
+        const std::string& file, const std::vector<ShaderProgramSlotDesc>& slots
+    );
+
     std::shared_ptr<DxShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize);
+
+    std::shared_ptr<DxReadWriteDataBuffer> createReadWriteDataBuffer(size_t byteSize);
 
     std::shared_ptr<DxRenderPass> createRenderPass(
         std::shared_ptr<DxShaderProgram> shaderProgram, DxRenderPass::PipelineDesc desc
@@ -124,12 +138,16 @@ public:
         DxRenderPass::PipelineDesc desc
     );
 
+    std::shared_ptr<DxComputePass> createComputePass(std::shared_ptr<DxComputeProgram> computeProgram);
+
     void drawItem(const std::string& geometry, const std::string& subGeometry);
 
     void getViewport(uint32_t& width, uint32_t& height) {
         width  = m_Width;
         height = m_Height;
     }
+
+    void compute(size_t x, size_t y, size_t z);
 };
 
 }  // namespace Engine

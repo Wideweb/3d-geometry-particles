@@ -44,7 +44,7 @@ public:
 
     void clear(float r, float g, float b, float a);
 
-    void setRenderPass(std::shared_ptr<OpenGLRenderPass> pass);
+    void setPass(std::shared_ptr<OpenGLRenderPass> pass);
 
     void setFramebuffer(std::shared_ptr<OpenGLFramebuffer> fb);
 

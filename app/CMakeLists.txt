@@ -16,6 +16,7 @@ set(SOURCE_EXE
     src/gfx/Skybox/SkyboxEffect.cpp
     src/gfx/SkyboxNoise/SkyboxNoiseEffect.cpp
     src/gfx/FrustrumCulling/FrustrumCullingEffect.cpp
+    src/gfx/FrustrumCullingGPU/FrustrumCullingGPUEffect.cpp
 )
 
 add_executable(${PROJECT_NAME} WIN32 ${SOURCE_EXE})
@@ -28,6 +29,7 @@ set(INCLUDE_DIRS
     src/gfx/Skybox
     src/gfx/SkyboxNoise
     src/gfx/FrustrumCulling
+    src/gfx/FrustrumCullingGPU
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})

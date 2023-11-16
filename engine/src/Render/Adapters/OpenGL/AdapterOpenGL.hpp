@@ -154,9 +154,9 @@ public:
 
     void clear(float r, float g, float b, float a) override { m_NativeRender->clear(r, g, b, a); }
 
-    void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
+    void setPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
         auto passWrapper = std::static_pointer_cast<OpenGLRenderPassWrapper>(pass);
-        m_NativeRender->setRenderPass(passWrapper->getNative());
+        m_NativeRender->setPass(passWrapper->getNative());
     }
 
     void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) override {

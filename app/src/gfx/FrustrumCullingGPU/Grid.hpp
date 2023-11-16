@@ -8,6 +8,8 @@
 
 #include "AABB.hpp"
 
+namespace FrustrumCullingGPU {
+
 constexpr size_t c_GridNodes = 65535;
 
 template <typename T>
@@ -35,9 +37,7 @@ public:
         splitNode(0, Axis::X);
     }
 
-    void addShape(T id, AABB box) {
-        addShape({id, box});
-    }
+    void addShape(T id, AABB box) { addShape({id, box}); }
 
     void addShape(CollisionShape<T> shape) {
         auto nodes = findNodes(shape.box);
@@ -159,3 +159,5 @@ private:
     std::unordered_map<T, CollisionShape<T>> m_Shapes;
     std::array<GridNode<T>, c_GridNodes>     m_Nodes;
 };
+
+}  // namespace FrustrumCullingGPU

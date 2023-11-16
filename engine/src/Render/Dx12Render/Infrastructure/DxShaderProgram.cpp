@@ -42,6 +42,9 @@ DxShaderProgram::DxShaderProgram(
 
         if (slot.type == SHADER_PROGRAM_SLOT_TYPE::DATA) {
             slotRootParameters[i].InitAsConstantBufferView(i);
+        } else if (slot.type == SHADER_PROGRAM_SLOT_TYPE::DATA_ARRAY) {
+            texTables.emplace_back();
+            slotRootParameters[i].InitAsShaderResourceView(i);
         } else if (slot.type == SHADER_PROGRAM_SLOT_TYPE::TEXTURE) {
             texTables.emplace_back();
             texTables[texTables.size() - 1].Init(
@@ -112,6 +115,11 @@ DxShaderProgram::DxShaderProgram(
 void DxShaderProgram::setDataSlot(size_t index, std::shared_ptr<DxShaderProgramDataBuffer> buffer) {
     m_Resources[index] = std::static_pointer_cast<DxResource>(buffer);
     m_CommandList->SetGraphicsRootConstantBufferView(index, buffer->resource()->GetGPUVirtualAddress());
+}
+
+void DxShaderProgram::setDataArraySlot(size_t index, std::shared_ptr<DxShaderProgramDataBuffer> buffer) {
+    m_Resources[index] = std::static_pointer_cast<DxResource>(buffer);
+    m_CommandList->SetGraphicsRootShaderResourceView(index, buffer->resource()->GetGPUVirtualAddress());
 }
 
 void DxShaderProgram::setTextureSlot(size_t index, std::shared_ptr<DxTexture> texture) {

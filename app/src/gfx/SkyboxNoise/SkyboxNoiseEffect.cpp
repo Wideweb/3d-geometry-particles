@@ -45,7 +45,7 @@ void SkyboxNoiseEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgramD
     skyboxData.model = glm::mat4(1.0f);
     m_SkyboxRenderData->copyData(&skyboxData);
 
-    render.setRenderPass(m_SkyboxRenderPass);
+    render.setPass(m_SkyboxRenderPass);
     m_SkyboxShader->setDataSlot(0, commonData);
     m_SkyboxShader->setDataSlot(1, m_SkyboxRenderData);
     m_SkyboxShader->setTextureSlot(2, m_SkyboxCubeTexture);

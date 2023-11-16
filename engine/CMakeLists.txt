@@ -63,9 +63,12 @@ if (WIN32)
       src/Render/Dx12Render/Infrastructure/DxDepthStencilTexture.cpp
       src/Render/Dx12Render/Infrastructure/DxFramebuffer.cpp
       src/Render/Dx12Render/Infrastructure/DxRenderPass.cpp
+      src/Render/Dx12Render/Infrastructure/DxComputePass.cpp
       src/Render/Dx12Render/Infrastructure/DxRenderTexture.cpp
       src/Render/Dx12Render/Infrastructure/DxShaderProgram.cpp
       src/Render/Dx12Render/Infrastructure/DxShaderProgramDataBuffer.cpp
+      src/Render/Dx12Render/Infrastructure/DxComputeProgram.cpp
+      src/Render/Dx12Render/Infrastructure/DxReadWriteDataBuffer.cpp
   )
 
   list(APPEND INCLUDE_DIRS

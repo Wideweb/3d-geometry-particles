@@ -11,6 +11,8 @@
 
 #include "Engine.hpp"
 
+namespace FrustrumCullingGPU {
+
 class Frustrum {
 public:
     static void getInWorldSpace(Engine::Camera& camera, std::vector<glm::vec3>& vertices, float farFarctor) {
@@ -45,3 +47,5 @@ public:
         vertices[7] = glm::vec3(cameraWorldMatrix * glm::vec4(-bx, by, -bk, 1.0f));
     }
 };
+
+}  // namespace FrustrumCullingGPU

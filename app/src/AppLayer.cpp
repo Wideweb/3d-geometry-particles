@@ -21,8 +21,9 @@ void AppLayer::onAttach() {
     m_CommonDataBuffer = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderCommonData));
 
     m_Effects.push_back(std::make_shared<GeometryParticleEffect>());
+    // m_Effects.push_back(std::make_shared<CascadeShadowEffect>());
     // m_Effects.push_back(std::make_shared<FrustrumCullingEffect>());
-    m_Effects.push_back(std::make_shared<FrustrumCullingEffect>());
+    m_Effects.push_back(std::make_shared<FrustrumCullingGPU::Effect>());
     m_Effects.push_back(std::make_shared<SkyboxNoiseEffect>());
 
     for (auto& effect : m_Effects) {

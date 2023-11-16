@@ -126,8 +126,12 @@ DxRender::DxRender(void* window, uint32_t width, uint32_t height)
     );
 
     m_CbvSrvUavDescPool = std::make_unique<DxDescriptorPool>(
-        m_Device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 1000
+        m_Device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 900
     );
+
+    m_CbvDescPool = std::make_unique<DxDescriptorPool>(m_CbvSrvUavDescPool.get(), 0, 299);
+    m_SrvDescPool = std::make_unique<DxDescriptorPool>(m_CbvSrvUavDescPool.get(), 301, 600);
+    m_UavDescPool = std::make_unique<DxDescriptorPool>(m_CbvSrvUavDescPool.get(), 601, 899);
 
     m_GeometryRegistry = std::make_unique<DxGeometryRegistry>(m_Device.Get());
     m_RenderResource   = std::make_unique<DxRenderResource>(m_Device.Get());
@@ -171,12 +175,12 @@ void DxRender::resize(uint32_t width, uint32_t height) {
 
         m_SwapChainBuffers[i] = std::make_unique<DxRenderTexture>(
             resource, m_BackBufferFormat, D3D12_RESOURCE_FLAG_NONE, m_Width, m_Height, m_Device.Get(),
-            m_CbvSrvUavDescPool.get(), m_RtvDescPool.get()
+            m_SrvDescPool.get(), m_RtvDescPool.get(), m_UavDescPool.get()
         );
     }
 
     m_DepthStencilBuffer = std::make_unique<DxDepthStencilTexture>(
-        m_DepthStencilFormat, m_Width, m_Height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_DsvDescPool.get()
+        m_DepthStencilFormat, m_Width, m_Height, m_Device.Get(), m_SrvDescPool.get(), m_DsvDescPool.get()
     );
     m_DepthStencilBuffer->beginRenderTo(m_CommandList.Get());
 
@@ -311,10 +315,22 @@ std::shared_ptr<DxRenderPass> DxRender::createRenderPass(
     return pass;
 }
 
+std::shared_ptr<DxComputePass> DxRender::createComputePass(std::shared_ptr<DxComputeProgram> computeProgram) {
+    auto pass = std::make_shared<DxComputePass>(m_Device.Get(), computeProgram);
+    return pass;
+}
+
 std::shared_ptr<DxShaderProgram> DxRender::createShaderProgram(
     const std::string& vertexFile, const std::string& pixelFile, const std::vector<ShaderProgramSlotDesc>& slots
 ) {
     auto shader = std::make_shared<DxShaderProgram>(m_Device.Get(), vertexFile, pixelFile, slots);
+    return shader;
+}
+
+std::shared_ptr<DxComputeProgram> DxRender::createComputeProgram(
+    const std::string& file, const std::vector<ShaderProgramSlotDesc>& slots
+) {
+    auto shader = std::make_shared<DxComputeProgram>(m_Device.Get(), file, slots);
     return shader;
 }
 
@@ -323,11 +339,16 @@ std::shared_ptr<DxShaderProgramDataBuffer> DxRender::createShaderProgramDataBuff
     return buffer;
 }
 
+std::shared_ptr<DxReadWriteDataBuffer> DxRender::createReadWriteDataBuffer(size_t byteSize) {
+    auto buffer = std::make_shared<DxReadWriteDataBuffer>(m_Device.Get(), m_CommandList.Get(), byteSize);
+    return buffer;
+}
+
 std::shared_ptr<DxRenderTexture> DxRender::createRenderTexture(
     DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height
 ) {
     auto rt = std::make_shared<DxRenderTexture>(
-        format, flags, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_RtvDescPool.get()
+        format, flags, width, height, m_Device.Get(), m_SrvDescPool.get(), m_RtvDescPool.get(), m_UavDescPool.get()
     );
     return rt;
 }
@@ -336,7 +357,7 @@ std::shared_ptr<DxDepthStencilTexture> DxRender::createDepthStencilTexture(
     DXGI_FORMAT format, size_t width, size_t height
 ) {
     auto dst = std::make_shared<DxDepthStencilTexture>(
-        format, width, height, m_Device.Get(), m_CbvSrvUavDescPool.get(), m_DsvDescPool.get()
+        format, width, height, m_Device.Get(), m_SrvDescPool.get(), m_DsvDescPool.get()
     );
     return dst;
 }
@@ -346,7 +367,7 @@ std::shared_ptr<DxTexture> DxRender::loadTexture(const std::string& filename) {
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap = nullptr;
     DxTextureLoader::loadImageDataFromFile(m_Device.Get(), m_CommandList.Get(), filename, resource, uploadHeap);
     auto texture = std::make_shared<DxTexture>(
-        resource, D3D12_SRV_DIMENSION_TEXTURE2D, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get()
+        resource, D3D12_SRV_DIMENSION_TEXTURE2D, uploadHeap, m_Device.Get(), m_SrvDescPool.get()
     );
     return texture;
 }
@@ -356,7 +377,7 @@ std::shared_ptr<DxTexture> DxRender::loadCubeTexture(const std::array<std::strin
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap = nullptr;
     DxTextureLoader::loadCubeMapDataFromFile(m_Device.Get(), m_CommandList.Get(), files, resource, uploadHeap);
     auto texture = std::make_shared<DxTexture>(
-        resource, D3D12_SRV_DIMENSION_TEXTURECUBE, uploadHeap, m_Device.Get(), m_CbvSrvUavDescPool.get()
+        resource, D3D12_SRV_DIMENSION_TEXTURECUBE, uploadHeap, m_Device.Get(), m_SrvDescPool.get()
     );
     return texture;
 }
@@ -365,6 +386,8 @@ void DxRender::setRenderPass(std::shared_ptr<DxRenderPass> pass) {
     pass->bind(m_CommandList.Get());
     m_RenderPass = pass;
 }
+
+void DxRender::setComputePass(std::shared_ptr<DxComputePass> pass) { pass->bind(m_CommandList.Get()); }
 
 void DxRender::setFramebuffer(std::shared_ptr<DxFramebuffer> fb) {
     if (m_Framebuffer != nullptr) {
@@ -442,6 +465,10 @@ void DxRender::drawItem(const std::string& geometry, const std::string& subGeome
     m_CommandList->DrawIndexedInstanced(
         indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation
     );
+}
+
+void DxRender::compute(size_t x, size_t y, size_t z) {
+    m_CommandList->Dispatch(x, y, z);
 }
 
 ID3D12Resource* DxRender::currentBackBuffer() const { return m_SwapChainBuffers[m_CurrBackBuffer]->getResource(); }

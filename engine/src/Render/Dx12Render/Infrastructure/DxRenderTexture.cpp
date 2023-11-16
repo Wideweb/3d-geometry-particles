@@ -6,16 +6,19 @@ namespace Engine {
 
 DxRenderTexture::DxRenderTexture(
     Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width,
-    size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+    size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool,
+    DxDescriptorPool* uavDescPool
 ) {
     m_Resource    = resource;
     m_Device      = device;
     m_SrvDescPool = srvDescPool;
     m_RtvDescPool = rtvDescPool;
+    m_UavDescPool = uavDescPool;
 
     m_State         = D3D12_RESOURCE_STATE_COMMON;
     m_SrvDescriptor = srvDescPool->get();
     m_RtvDescriptor = rtvDescPool->get();
+    m_UavDescriptor = uavDescPool->get();
     m_Format        = format;
     m_Flags         = flags;
 
@@ -28,15 +31,17 @@ DxRenderTexture::DxRenderTexture(
 
 DxRenderTexture::DxRenderTexture(
     DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height, ID3D12Device* device,
-    DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+    DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool, DxDescriptorPool* uavDescPool
 ) {
     m_Device      = device;
     m_SrvDescPool = srvDescPool;
     m_RtvDescPool = rtvDescPool;
+    m_UavDescPool = uavDescPool;
 
     m_State         = D3D12_RESOURCE_STATE_COMMON;
     m_SrvDescriptor = srvDescPool->get();
     m_RtvDescriptor = rtvDescPool->get();
+    m_UavDescriptor = uavDescPool->get();
     m_Format        = format;
     m_Flags         = flags;
 
@@ -100,6 +105,7 @@ void DxRenderTexture::resize(size_t width, size_t height) {
     // SetDebugObjectName(m_resource.Get(), L"DxRenderTexture RT");
 
     // Create RTV.
+    // D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
     m_Device->CreateRenderTargetView(m_Resource.Get(), nullptr, m_RtvDescriptor.cpu);
 
     // Create SRV.
@@ -111,6 +117,12 @@ void DxRenderTexture::resize(size_t width, size_t height) {
     srvDesc.Texture2D.MipLevels             = -1;
     m_Device->CreateShaderResourceView(m_Resource.Get(), &srvDesc, m_SrvDescriptor.cpu);
 
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+    uavDesc.Format                           = m_Format;
+    uavDesc.ViewDimension                    = D3D12_UAV_DIMENSION_TEXTURE2D;
+    uavDesc.Texture2D.MipSlice               = 0;
+    m_Device->CreateUnorderedAccessView(m_Resource.Get(), nullptr, &uavDesc, m_UavDescriptor.cpu);
+
     m_Width  = width;
     m_Height = height;
 }
@@ -120,12 +132,13 @@ void DxRenderTexture::release() {
 
     m_SrvDescPool->release(m_SrvDescriptor);
     m_RtvDescPool->release(m_RtvDescriptor);
+    m_UavDescPool->release(m_UavDescriptor);
 
     m_State = D3D12_RESOURCE_STATE_COMMON;
     m_Width = m_Height = 0;
 
-    m_SrvDescriptor.cpu.ptr = m_RtvDescriptor.cpu.ptr = 0;
-    m_SrvDescriptor.gpu.ptr = m_RtvDescriptor.gpu.ptr = 0;
+    m_SrvDescriptor.cpu.ptr = m_RtvDescriptor.cpu.ptr = m_UavDescriptor.cpu.ptr = 0;
+    m_SrvDescriptor.gpu.ptr = m_RtvDescriptor.gpu.ptr = m_UavDescriptor.gpu.ptr = 0;
 }
 
 void DxRenderTexture::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {

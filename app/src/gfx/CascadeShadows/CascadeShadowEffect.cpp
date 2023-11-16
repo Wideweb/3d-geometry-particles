@@ -149,6 +149,9 @@ void CascadeShadowEffect::initInstances() {
 }
 
 void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
+    auto& app    = Engine::Application::get();
+    auto& camera = app.getCamera();
+    
     // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
     glm::mat4 projFix = glm::mat4(
         0.5f,  0.0f, 0.0f, 0.0f,
@@ -157,7 +160,7 @@ void CascadeShadowEffect::update(GfxEffect::RenderCommonData& commonData) {
         0.5f,  0.5f, 0.0f, 1.0f
     );
 
-    auto cascades = CascadeShadow::calculate(commonData.light.view, m_CascadeDistances, -10.0f, 10.0f);
+    auto cascades = CascadeShadow::calculate(camera, commonData.light.view, m_CascadeDistances, -10.0f, 10.0f);
 
     for (size_t i = 0; i < m_DepthMaps.size(); i++) {
         DepthRenderCommonData depthCommonData;
@@ -182,7 +185,7 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
     uint32_t prevViewportWidth, prevViewportHeight;
     render.getViewport(prevViewportWidth, prevViewportHeight);
 
-    render.setRenderPass(m_DepthRenderPass);
+    render.setPass(m_DepthRenderPass);
     render.setViewport(2048, 2048);
 
     for (size_t i = 0; i < m_DepthMaps.size(); i++) {
@@ -204,7 +207,7 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
     //////////////////////////////// DEPTH MAP /////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////// DRAW ///////////////////////////////////
-    render.setRenderPass(m_LightRenderPass);
+    render.setPass(m_LightRenderPass);
 
     m_LightShader->setDataSlot(0, commonData);
 
@@ -223,7 +226,7 @@ void CascadeShadowEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgra
     /////////////////////////////////// DRAW ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// DEBUG ///////////////////////////////////
-    // render.setRenderPass(m_ScreenTextureRenderPass);
+    // render.setPass(m_ScreenTextureRenderPass);
     // for (size_t i = 0; i < m_ScreenRenderData.size(); i++) {
     //     RenderItemData itemData;
     //     itemData.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 1.0f));

@@ -10,12 +10,13 @@ class DxRenderTexture : public DxResource {
 public:
     DxRenderTexture(
         Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width,
-        size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+        size_t height, ID3D12Device* device, DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool,
+        DxDescriptorPool* uavDescPool
     );
 
     DxRenderTexture(
         DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, size_t width, size_t height, ID3D12Device* device,
-        DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool
+        DxDescriptorPool* srvDescPool, DxDescriptorPool* rtvDescPool, DxDescriptorPool* uavDescPool
     );
 
     void resize(size_t width, size_t height);
@@ -49,6 +50,7 @@ public:
 
     DxDescriptor getSrvDescriptor() const noexcept { return m_SrvDescriptor; }
     DxDescriptor getRtvDescriptor() const noexcept { return m_RtvDescriptor; }
+    DxDescriptor getUavDescriptor() const noexcept { return m_UavDescriptor; }
 
     const float* getClearColor() const noexcept { return m_ClearColor; }
 
@@ -56,11 +58,13 @@ private:
     ID3D12Device*     m_Device;
     DxDescriptorPool* m_SrvDescPool;
     DxDescriptorPool* m_RtvDescPool;
+    DxDescriptorPool* m_UavDescPool;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> m_Resource;
     D3D12_RESOURCE_STATES                  m_State;
     DxDescriptor                           m_SrvDescriptor;
     DxDescriptor                           m_RtvDescriptor;
+    DxDescriptor                           m_UavDescriptor;
     float                                  m_ClearColor[4];
 
     DXGI_FORMAT          m_Format;

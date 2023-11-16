@@ -1,10 +1,12 @@
-#include "FrustrumCullingEffect.hpp"
+#include "FrustrumCullingGPUEffect.hpp"
 
 #include "CascadeShadow.hpp"
 #include "Frustrum.hpp"
 #include "ModelFactory.hpp"
 
-void FrustrumCullingEffect::bind() {
+namespace FrustrumCullingGPU {
+
+void Effect::bind() {
     auto& app    = Engine::Application::get();
     auto& render = app.getRender();
 
@@ -13,14 +15,14 @@ void FrustrumCullingEffect::bind() {
     render.registerGeometry("frustrum-culling", {"instance"}, {monkey});
 
     m_FrustrumVertices.resize(8);
-    m_Grid      = std::make_unique<Grid<size_t>>(AABB(glm::vec3(-1000.0f), glm::vec3(1000.0f)));
     m_ModelAABB = AABB(monkey);
 
     initRenderPass();
+    initComputePass();
     initInstances();
 }
 
-void FrustrumCullingEffect::initRenderPass() {
+void Effect::initRenderPass() {
     auto& app    = Engine::Application::get();
     auto& render = app.getRender();
 
@@ -41,14 +43,30 @@ void FrustrumCullingEffect::initRenderPass() {
     m_RenderPass = render.createRenderPass(m_Shader, pipelineDesc);
 }
 
-void FrustrumCullingEffect::initInstances() {
+void Effect::initComputePass() {
     auto& app    = Engine::Application::get();
     auto& render = app.getRender();
 
-    for (size_t i = 0; i < 10000; i++) {
+    std::vector<Engine::ShaderProgramSlotDesc> slots = {
+        {"frustrum",  Engine::SHADER_PROGRAM_SLOT_TYPE::DATA           },
+        {"instances", Engine::SHADER_PROGRAM_SLOT_TYPE::DATA_ARRAY     },
+        {"visible",   Engine::SHADER_PROGRAM_SLOT_TYPE::READ_WRITE_DATA},
+    };
+    m_ComputeShader = render.createComputeProgram("./../assets/shaders/dx/frustrum-culling.hlsl", slots);
+    m_ComputePass = render.createComputePass(m_ComputeShader);
+}
+
+void Effect::initInstances() {
+    auto& app    = Engine::Application::get();
+    auto& render = app.getRender();
+
+    for (size_t i = 0; i < 256 * 25; i++) {
         m_InstancesRenderData.push_back(render.createShaderProgramDataBuffer(sizeof(RenderItemData)));
     }
     m_InstanceMaterialRenderData = render.createShaderProgramDataBuffer(sizeof(GfxEffect::RenderMaterialData));
+
+    std::vector<AABB> aabbs;
+    aabbs.reserve(m_InstancesRenderData.size());
 
     for (size_t i = 0; i < m_InstancesRenderData.size(); i++) {
         int       x   = i / 100;
@@ -63,7 +81,7 @@ void FrustrumCullingEffect::initInstances() {
         itemData.model = glm::transpose(model);
         m_InstancesRenderData[i]->copyData(&itemData);
 
-        m_Grid->addShape(i, m_ModelAABB.move(pos));
+        aabbs.push_back(m_ModelAABB.move(pos));
     }
 
     GfxEffect::RenderMaterialData instanceMaterial;
@@ -71,19 +89,48 @@ void FrustrumCullingEffect::initInstances() {
     instanceMaterial.fresnelR0     = glm::vec3(0.01f);
     instanceMaterial.roughness     = 0.5f;
     m_InstanceMaterialRenderData->copyData(&instanceMaterial);
+
+    m_FrustrumComputeData  = render.createShaderProgramDataBuffer(sizeof(AABB));
+    m_InstancesComputeData = render.createShaderProgramDataBuffer(sizeof(AABB) * m_InstancesRenderData.size());
+    m_VisibleComputeData   = render.createReadWriteDataBuffer(sizeof(uint32_t) * (m_InstancesRenderData.size() + 1));
+
+    m_InstancesComputeData->copyData(aabbs.data());
+
+    std::vector<uint32_t> visibleIndices(m_InstancesRenderData.size() + 1, 0);
+    m_VisibleComputeData->copyData(visibleIndices.data());
 }
 
-void FrustrumCullingEffect::update(GfxEffect::RenderCommonData& commonData) {}
+void Effect::update(GfxEffect::RenderCommonData& commonData) {}
 
-void FrustrumCullingEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> commonData) {
+void Effect::draw(std::shared_ptr<Engine::CrossPlatformShaderProgramDataBuffer> commonData) {
     auto& app    = Engine::Application::get();
     auto& camera = app.getCamera();
     auto& render = app.getRender();
     auto& time   = app.getTime();
 
     Frustrum::getInWorldSpace(camera, m_FrustrumVertices, 0.5f);
-    std::vector<CollisionShape<size_t>> visible = m_Grid->findNeighbors(m_FrustrumVertices);
+    AABB frustrumAABB(m_FrustrumVertices);
+    m_FrustrumComputeData->copyData(&frustrumAABB);
 
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// COMPUTE //////////////////////////////////
+    render.setComputePass(m_ComputePass);
+
+    uint32_t zero = 0;
+    m_VisibleComputeData->copyData(&zero, sizeof(uint32_t));
+    m_VisibleComputeData->writeToVRAM();
+
+    m_ComputeShader->setDataSlot(0, m_FrustrumComputeData);
+    m_ComputeShader->setDataArraySlot(1, m_InstancesComputeData);
+    m_ComputeShader->setReadWriteDataSlot(2, m_VisibleComputeData);
+
+    size_t numGroupsX = static_cast<size_t>(std::ceilf(m_InstancesRenderData.size() / 256.0f));
+    render.compute(numGroupsX, 1, 1);
+
+    m_VisibleComputeData->readFromVRAM();
+    uint32_t* visible = static_cast<uint32_t*>(m_VisibleComputeData->data());
+    uint32_t visibleNum = visible[0];
+    ///////////////////////////////// COMPUTE //////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////// DRAW ///////////////////////////////////
     render.setPass(m_RenderPass);
@@ -91,8 +138,11 @@ void FrustrumCullingEffect::draw(std::shared_ptr<Engine::CrossPlatformShaderProg
     m_Shader->setDataSlot(0, commonData);
 
     m_Shader->setDataSlot(2, m_InstanceMaterialRenderData);
-    for (auto item : visible) {
-        m_Shader->setDataSlot(1, m_InstancesRenderData[item.id]);
+    for (uint32_t index = 1; index <= visibleNum; index++) {
+        uint32_t id = visible[index];
+        m_Shader->setDataSlot(1, m_InstancesRenderData[id]);
         render.drawItem("frustrum-culling", "instance");
     }
 }
+
+}  // namespace FrustrumCullingGPU

@@ -18,10 +18,7 @@ public:
         glm::vec4 frontPlane;
     };
 
-    static std::array<Cascade, 4> calculate(const glm::mat4& lightView, std::array<float, 8> distances, float zMinOffset, float zMaxOffset) {
-        auto& app    = Engine::Application::get();
-        auto& camera = app.getCamera();
-
+    static std::array<Cascade, 4> calculate(Engine::Camera& camera, const glm::mat4& lightView, std::array<float, 8> distances, float zMinOffset, float zMaxOffset) {
         int w, h;
         camera.getSize(w, h);
         float fovY = camera.getFieldOfView();

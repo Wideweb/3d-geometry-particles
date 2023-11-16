@@ -30,7 +30,7 @@ void OpenGLRender::resize(uint32_t width, uint32_t height) {
     m_Height = height;
 }
 
-void OpenGLRender::setRenderPass(std::shared_ptr<OpenGLRenderPass> pass) {
+void OpenGLRender::setPass(std::shared_ptr<OpenGLRenderPass> pass) {
     if (m_RenderPass != nullptr) {
         m_RenderPass->unbind();
     }

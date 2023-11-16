@@ -12,6 +12,8 @@ public:
         ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, size_t capacity
     );
 
+    DxDescriptorPool(DxDescriptorPool* pool, size_t from, size_t to);
+
     virtual ~DxDescriptorPool();
 
     DxDescriptor get();
@@ -31,6 +33,7 @@ private:
     D3D12_DESCRIPTOR_HEAP_FLAGS                  m_HeapFlags;
     size_t                                       m_DescriptorSize;
 
+    size_t              m_From;
     size_t              m_Capacity;
     size_t              m_Size;
     std::vector<size_t> m_Free;

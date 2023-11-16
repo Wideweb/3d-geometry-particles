@@ -1,8 +1,11 @@
 #pragma once
 
 #include "CrossPlatformRender.hpp"
+#include "DxComputePass.hpp"
+#include "DxComputeProgram.hpp"
 #include "DxDepthStencilTexture.hpp"
 #include "DxFramebuffer.hpp"
+#include "DxReadWriteDataBuffer.hpp"
 #include "DxRender.hpp"
 #include "DxRenderPass.hpp"
 #include "DxRenderTexture.hpp"
@@ -129,6 +132,25 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////
+/////////////////////// READ WRITE DATA BUFFER /////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class DxReadWriteDataBufferWrapper : public CrossPlatformReadWriteDataBuffer {
+public:
+    DxReadWriteDataBufferWrapper(std::shared_ptr<DxReadWriteDataBuffer> nativeBuffer) { m_NativeBuffer = nativeBuffer; }
+
+    void  copyData(void* data) override { m_NativeBuffer->copyData(data); }
+    void  copyData(void* data, size_t byteSize) override { m_NativeBuffer->copyData(data, byteSize); }
+    void  readFromVRAM() override { m_NativeBuffer->readFromVRAM(); }
+    void  writeToVRAM() override { m_NativeBuffer->writeToVRAM(); }
+    void* data() override { return m_NativeBuffer->data(); }
+
+    std::shared_ptr<DxReadWriteDataBuffer> getNative() { return m_NativeBuffer; }
+
+private:
+    std::shared_ptr<DxReadWriteDataBuffer> m_NativeBuffer;
+};
+
+////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// SHADER PROGRAM //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class DxShaderProgramWrapper : public CrossPlatformShaderProgram {
@@ -162,6 +184,49 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////
+///////////////////////////// COMPUTE PROGRAM //////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class DxComputeProgramWrapper : public CrossPlatformComputeProgram {
+public:
+    DxComputeProgramWrapper(std::shared_ptr<DxComputeProgram> nativeCP) noexcept { m_NativeCP = nativeCP; }
+
+    void setDataSlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer) override {
+        auto bufferWrapper = std::static_pointer_cast<DxShaderProgramDataBufferWrapper>(buffer);
+        m_NativeCP->setDataSlot(index, bufferWrapper->getNative());
+    }
+
+    void setDataArraySlot(size_t index, std::shared_ptr<CrossPlatformShaderProgramDataBuffer> buffer) {
+        auto bufferWrapper = std::static_pointer_cast<DxShaderProgramDataBufferWrapper>(buffer);
+        m_NativeCP->setDataArraySlot(index, bufferWrapper->getNative());
+    }
+
+    void setReadWriteDataSlot(size_t index, std::shared_ptr<CrossPlatformReadWriteDataBuffer> buffer) {
+        auto bufferWrapper = std::static_pointer_cast<DxReadWriteDataBufferWrapper>(buffer);
+        m_NativeCP->setReadWriteDataSlot(index, bufferWrapper->getNative());
+    }
+
+    void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformTexture> texture) override {
+        auto textureWrapper = std::static_pointer_cast<DxTextureWrapper>(texture);
+        m_NativeCP->setTextureSlot(index, textureWrapper->getNative());
+    }
+
+    void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformRenderTexture> texture) override {
+        auto textureWrapper = std::static_pointer_cast<DxRenderTextureWrapper>(texture);
+        m_NativeCP->setTextureSlot(index, textureWrapper->getNative());
+    }
+
+    void setTextureSlot(size_t index, std::shared_ptr<CrossPlatformDepthStencilTexture> texture) override {
+        auto textureWrapper = std::static_pointer_cast<DxDepthStencilTextureWrapper>(texture);
+        m_NativeCP->setTextureSlot(index, textureWrapper->getNative());
+    }
+
+    std::shared_ptr<DxComputeProgram> getNative() { return m_NativeCP; }
+
+private:
+    std::shared_ptr<DxComputeProgram> m_NativeCP;
+};
+
+////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// RENDER PASS ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 class DxRenderPassWrapper : public CrossPlatformRenderPass {
@@ -172,6 +237,19 @@ public:
 
 private:
     std::shared_ptr<DxRenderPass> m_NativeRP;
+};
+
+////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// COMPUTE PASS ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+class DxComputePassWrapper : public CrossPlatformComputePass {
+public:
+    DxComputePassWrapper(std::shared_ptr<DxComputePass> nativeCP) noexcept { m_NativeCP = nativeCP; }
+
+    std::shared_ptr<DxComputePass> getNative() { return m_NativeCP; }
+
+private:
+    std::shared_ptr<DxComputePass> m_NativeCP;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -238,10 +316,17 @@ public:
 
     void setViewport(uint32_t width, uint32_t height) override { m_NativeRender->setViewport(width, height); }
 
-    void setRenderPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
+    void setPass(std::shared_ptr<CrossPlatformRenderPass> pass) override {
         auto passWrapper = std::static_pointer_cast<DxRenderPassWrapper>(pass);
         m_NativeRender->setRenderPass(passWrapper->getNative());
     }
+
+    void setComputePass(std::shared_ptr<CrossPlatformComputePass> pass) override {
+        auto passWrapper = std::static_pointer_cast<DxComputePassWrapper>(pass);
+        m_NativeRender->setComputePass(passWrapper->getNative());
+    }
+
+    void compute(size_t x, size_t y, size_t z) override { m_NativeRender->compute(x, y, z); }
 
     void setFramebuffer(std::shared_ptr<CrossPlatformFramebuffer> fb) override {
         if (fb == nullptr) {
@@ -288,9 +373,21 @@ public:
         return std::make_shared<DxShaderProgramWrapper>(nativeShaderProgram);
     }
 
+    virtual std::shared_ptr<CrossPlatformComputeProgram> createComputeProgram(
+        const std::string& file, const std::vector<ShaderProgramSlotDesc>& slots
+    ) override {
+        auto nativeComputeProgram = m_NativeRender->createComputeProgram(file, slots);
+        return std::make_shared<DxComputeProgramWrapper>(nativeComputeProgram);
+    }
+
     std::shared_ptr<CrossPlatformShaderProgramDataBuffer> createShaderProgramDataBuffer(size_t byteSize) override {
         auto nativeBuffer = m_NativeRender->createShaderProgramDataBuffer(byteSize);
         return std::make_shared<DxShaderProgramDataBufferWrapper>(nativeBuffer);
+    }
+
+    std::shared_ptr<CrossPlatformReadWriteDataBuffer> createReadWriteDataBuffer(size_t byteSize) override {
+        auto nativeBuffer = m_NativeRender->createReadWriteDataBuffer(byteSize);
+        return std::make_shared<DxReadWriteDataBufferWrapper>(nativeBuffer);
     }
 
     std::shared_ptr<CrossPlatformFramebuffer> createFramebuffer() override {
@@ -336,6 +433,14 @@ public:
             shaderProgramWrapper->getNative(), nativeRtvFormats, nativeDsvFormat, nativePipelineDesc
         );
         return std::make_shared<DxRenderPassWrapper>(nativeRenderPass);
+    }
+
+    std::shared_ptr<CrossPlatformComputePass> createComputePass(
+        std::shared_ptr<CrossPlatformComputeProgram> computeProgram
+    ) override {
+        auto computerProgramWrapper = std::static_pointer_cast<DxComputeProgramWrapper>(computeProgram);
+        auto nativeRenderPass       = m_NativeRender->createComputePass(computerProgramWrapper->getNative());
+        return std::make_shared<DxComputePassWrapper>(nativeRenderPass);
     }
 
     void drawItem(const std::string& geometry, const std::string& subGeometry) override {
